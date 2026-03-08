@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="War.io - A fast-paced 2D jetpack arena shooter. Battle AI bots in chaotic combat with multiple weapons, jetpack physics, and explosive action.">
+    <title>War.io - Jetpack Arena Shooter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Press+Start+2P&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- PeerJS for Serverless Multiplayer -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+
+<body>
+    <!-- Main Menu -->
+    <div id="main-menu" class="menu-screen">
+        <div class="menu-bg-effects">
+            <div class="particle-field"></div>
+        </div>
+        <div class="menu-content">
+            <div class="game-logo">
+                <h1 class="logo-title">WAR<span class="logo-dot">.io</span></h1>
+                <p class="logo-subtitle">JETPACK ARENA SHOOTER</p>
+            </div>
+            <div class="menu-buttons">
+                <button id="btn-play" class="menu-btn primary-btn">
+                    <span class="btn-icon">⚔</span>
+                    <span class="btn-text">PLAY SOLO</span>
+                </button>
+                <button id="btn-multiplayer" class="menu-btn primary-btn"
+                    style="background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);">
+                    <span class="btn-icon">🌐</span>
+                    <span class="btn-text">MULTIPLAYER</span>
+                </button>
+                <button id="btn-customize" class="menu-btn">
+                    <span class="btn-icon">🎨</span>
+                    <span class="btn-text">CUSTOMIZE</span>
+                </button>
+                <button id="btn-settings" class="menu-btn">
+                    <span class="btn-icon">⚙</span>
+                    <span class="btn-text">SETTINGS</span>
+                </button>
+            </div>
+            <div class="menu-footer">
+                <p>WASD Move • Mouse Aim/Shoot • W Jetpack • G Grenade • R Reload • F Melee</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multiplayer Lobby -->
+    <div id="multiplayer-lobby" class="menu-screen hidden">
+        <div class="menu-bg-effects">
+            <div class="particle-field"></div>
+        </div>
+        <div class="settings-container" style="width:400px">
+            <h2 class="settings-title">MULTIPLAYER</h2>
+            <div id="lobby-selection">
+                <button id="btn-create-lobby" class="menu-btn primary-btn">
+                    <span class="btn-icon">➕</span>
+                    <span class="btn-text">CREATE ROOM</span>
+                </button>
+                <div style="margin: 10px 0; display: flex; gap: 10px;">
+                    <input type="text" id="lobby-code-input" placeholder="ROOM CODE"
+                        style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: #fff; font-family: 'Orbitron', sans-serif;">
+                    <button id="btn-join-lobby" class="menu-btn" style="margin: 0;">JOIN</button>
+                </div>
+            </div>
+            <div id="lobby-waiting" class="hidden">
+                ROOM: <span id="display-room-code"
+                    style="color:#fff; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 4px; border: 1px solid #444;">XXXXXX</span>
+                </p>
+                <p style="text-align: center; font-size: 0.6rem; color: #888; margin-top: -10px; margin-bottom: 15px;">
+                    (CLICK ID TO COPY)</p>
+                <div id="player-list" style="margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                    <!-- Players join here -->
+                    <div class="player-slot">You</div>
+                </div>
+                <button id="btn-start-multiplayer" class="menu-btn primary-btn hidden">
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">START MATCH</span>
+                </button>
+                <p id="waiting-msg" style="text-align: center; font-size: 0.8rem; color: #888;">WAITING FOR HOST...</p>
+            </div>
+            <button id="btn-back-lobby" class="menu-btn">
+                <span class="btn-icon">←</span>
+                <span class="btn-text">BACK</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Customize Panel -->
+    <div id="customize-panel" class="menu-screen hidden">
+        <div class="settings-container" style="width:480px">
+            <h2 class="settings-title">CUSTOMIZE</h2>
+            <div class="setting-group">
+                <label>Armor Color</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="armorColor">←</button>
+                    <span id="setting-armorColor" class="setting-value">🔵 Cyan</span>
+                    <button class="setting-plus" data-setting="armorColor">→</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Visor Color</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="visorColor">←</button>
+                    <span id="setting-visorColor" class="setting-value">🟢 Green</span>
+                    <button class="setting-plus" data-setting="visorColor">→</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Weapon Skin</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="weaponSkin">←</button>
+                    <span id="setting-weaponSkin" class="setting-value">Default</span>
+                    <button class="setting-plus" data-setting="weaponSkin">→</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Prestige</label>
+                <span id="prestige-display" class="setting-value" style="color:#ffd700">☆ 0</span>
+            </div>
+            <div id="medals-display"
+                style="margin-top:8px;text-align:center;font-size:0.8rem;color:#aaa;letter-spacing:1px"></div>
+            <button id="btn-back-customize" class="menu-btn">
+                <span class="btn-icon">←</span>
+                <span class="btn-text">BACK</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div id="settings-panel" class="menu-screen hidden">
+        <div class="settings-container">
+            <h2 class="settings-title">SETTINGS</h2>
+            <div class="setting-group">
+                <label>Game Mode</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="gameMode">←</button>
+                    <span id="setting-gameMode" class="setting-value">Free For All</span>
+                    <button class="setting-plus" data-setting="gameMode">→</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Bot Count</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="botCount">−</button>
+                    <span id="setting-botCount" class="setting-value">7</span>
+                    <button class="setting-plus" data-setting="botCount">+</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Bot Difficulty</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="difficulty">−</button>
+                    <span id="setting-difficulty" class="setting-value">Medium</span>
+                    <button class="setting-plus" data-setting="difficulty">+</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Kill Target</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="killTarget">−</button>
+                    <span id="setting-killTarget" class="setting-value">20</span>
+                    <button class="setting-plus" data-setting="killTarget">+</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Sound</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="sound">−</button>
+                    <span id="setting-sound" class="setting-value">ON</span>
+                    <button class="setting-plus" data-setting="sound">+</button>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>Map</label>
+                <div class="setting-control">
+                    <button class="setting-minus" data-setting="map">−</button>
+                    <span id="setting-map" class="setting-value">Desert Base</span>
+                    <button class="setting-plus" data-setting="map">+</button>
+                </div>
+            </div>
+            <button id="btn-back-settings" class="menu-btn">
+                <span class="btn-icon">←</span>
+                <span class="btn-text">BACK</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="menu-screen hidden">
+        <div class="game-over-content">
+            <h2 id="game-over-title" class="game-over-title">VICTORY!</h2>
+            <div id="game-over-stats" class="game-over-stats"></div>
+            <div id="game-over-medals" style="margin:8px 0;font-size:1.1rem;letter-spacing:2px"></div>
+            <div class="menu-buttons">
+                <button id="btn-play-again" class="menu-btn primary-btn">
+                    <span class="btn-icon">⚔</span>
+                    <span class="btn-text">PLAY AGAIN</span>
+                </button>
+                <button id="btn-main-menu" class="menu-btn">
+                    <span class="btn-icon">🏠</span>
+                    <span class="btn-text">MAIN MENU</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- HUD Overlay -->
+    <div id="hud" class="hidden">
+        <!-- Top Left - Player Stats -->
+        <div id="hud-player-stats">
+            <div class="hud-health">
+                <span class="hud-label">HP</span>
+                <div class="hud-bar">
+                    <div id="health-bar-fill" class="hud-bar-fill health-fill"></div>
+                </div>
+                <span id="health-text" class="hud-value">100</span>
+            </div>
+            <div class="hud-shield" id="hud-shield-row" style="display:none">
+                <span class="hud-label">🛡</span>
+                <div class="hud-bar">
+                    <div id="shield-bar-fill" class="hud-bar-fill shield-fill"></div>
+                </div>
+                <span id="shield-text" class="hud-value">0</span>
+            </div>
+            <div class="hud-fuel">
+                <span class="hud-label">FUEL</span>
+                <div class="hud-bar">
+                    <div id="fuel-bar-fill" class="hud-bar-fill fuel-fill"></div>
+                </div>
+                <span id="fuel-text" class="hud-value">100</span>
+            </div>
+            <div class="hud-weapon-info">
+                <span id="weapon-name" class="weapon-name">PISTOL</span>
+                <span id="ammo-count" class="ammo-count">∞</span>
+            </div>
+            <div class="hud-grenade-info">
+                <span id="grenade-count" class="grenade-count">🧨 4</span>
+                <span class="grenade-hint">G / RClick</span>
+            </div>
+            <div class="hud-xp">
+                <span id="level-text" class="level-text">LVL 1</span>
+                <div class="hud-bar xp-bar">
+                    <div id="xp-bar-fill" class="hud-bar-fill xp-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kill Streak -->
+        <div id="hud-streak"
+            style="display:none;position:absolute;top:70px;left:16px;background:rgba(255,100,0,0.15);border:1px solid rgba(255,150,0,0.4);border-radius:8px;padding:4px 12px;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;color:#ff9800;letter-spacing:2px">
+            <span id="streak-text">🔥 STREAK: 0</span>
+        </div>
+
+        <!-- Challenges -->
+        <div id="hud-challenges"
+            style="position:absolute;bottom:80px;left:16px;display:flex;flex-direction:column;gap:3px;pointer-events:none">
+        </div>
+
+        <!-- Top Right - Match Stats -->
+        <div id="hud-match-stats">
+            <div class="hud-kills">
+                <span class="stat-label">KILLS</span>
+                <span id="kill-count" class="stat-value">0</span>
+            </div>
+            <div class="hud-deaths">
+                <span class="stat-label">DEATHS</span>
+                <span id="death-count" class="stat-value">0</span>
+            </div>
+            <div class="hud-target">
+                <span class="stat-label">TARGET</span>
+                <span id="target-count" class="stat-value">20</span>
+            </div>
+        </div>
+
+        <!-- Game Mode Label -->
+        <div id="hud-mode-label"
+            style="position:absolute;top:60px;right:16px;font-family:'Orbitron',sans-serif;font-size:0.55rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.4)">
+            FFA</div>
+
+        <!-- Leaderboard -->
+        <div id="hud-leaderboard">
+            <div class="leaderboard-header">LEADERBOARD</div>
+            <div id="leaderboard-list"></div>
+        </div>
+
+        <!-- Kill Feed -->
+        <div id="kill-feed"></div>
+
+        <!-- Announcer (center screen) -->
+        <div id="announcer"
+            style="position:absolute;top:20%;left:50%;transform:translateX(-50%);pointer-events:none;text-align:center;z-index:60">
+        </div>
+
+        <!-- Crosshair -->
+        <div id="crosshair">
+            <div class="crosshair-dot"></div>
+            <div class="crosshair-line top"></div>
+            <div class="crosshair-line right"></div>
+            <div class="crosshair-line bottom"></div>
+            <div class="crosshair-line left"></div>
+        </div>
+
+        <!-- Weapon Pickup Prompt -->
+        <div id="pickup-prompt" class="hidden">
+            <span>Press <kbd>E</kbd> to pick up</span>
+            <span id="pickup-weapon-name"></span>
+        </div>
+
+        <!-- Respawn Timer -->
+        <div id="respawn-overlay" class="hidden">
+            <div class="respawn-text">RESPAWNING IN</div>
+            <div id="respawn-timer" class="respawn-timer">3</div>
+        </div>
+
+        <!-- Battle Royale Zone Warning -->
+        <div id="br-zone-warning" class="hidden"
+            style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(255,0,0,0.2);border:1px solid rgba(255,0,0,0.6);border-radius:8px;padding:6px 20px;font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:#ff4444;letter-spacing:2px;animation:healthPulse 0.5s ease-in-out infinite">
+            ⚠ OUTSIDE SAFE ZONE ⚠</div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
