@@ -157,9 +157,12 @@ class AudioEngine {
             switch (type) {
                 case 'shoot_pistol': this._noise(g, 0.15, 0.08, now); this._tone(g, 800, 200, 0.06, now, 'square'); break;
                 case 'shoot_smg': this._noise(g, 0.1, 0.05, now); this._tone(g, 1000, 300, 0.04, now, 'square'); break;
+                case 'shoot_assault': this._noise(g, 0.18, 0.1, now); this._tone(g, 600, 250, 0.08, now, 'square'); break;
                 case 'shoot_shotgun': this._noise(g, 0.25, 0.12, now); this._tone(g, 400, 100, 0.1, now, 'sawtooth'); break;
                 case 'shoot_sniper': this._noise(g, 0.2, 0.15, now); this._tone(g, 1500, 200, 0.12, now, 'sine'); break;
                 case 'shoot_rocket': this._noise(g, 0.15, 0.2, now); this._tone(g, 200, 80, 0.2, now, 'sawtooth'); break;
+                case 'shoot_gl': this._noise(g, 0.15, 0.15, now); this._tone(g, 350, 150, 0.15, now, 'sawtooth'); break;
+                case 'shoot_flame': this._noise(g, 0.05, 0.1, now); this._tone(g, 80, 40, 0.1, now, 'sawtooth'); break;
                 case 'shoot_bouncer': this._tone(g, 1200, 600, 0.06, now, 'sine'); this._tone(g, 800, 1400, 0.04, now, 'square'); break;
                 case 'explode': this._noise(g, 0.35, 0.4, now); this._tone(g, 100, 30, 0.3, now, 'sawtooth'); break;
                 case 'hit': this._tone(g, 600, 200, 0.05, now, 'square'); break;
@@ -1404,8 +1407,17 @@ class BotAI {
         // Apply decisions
         const e = this.entity;
         if (this.moveDir !== 0) { e.vx += this.moveDir * MOVE_SPEED * 0.15; e.facingRight = this.moveDir > 0; }
-        if (this.wantJet && e.fuel > 0) { e.vy += JETPACK_THRUST * 0.7; e.fuel -= FUEL_USE; e.jetpacking = true; }
-        else { e.jetpacking = false; }
+
+        let jetThrust = JETPACK_THRUST * 0.7;
+        if (this.diff.name === 'Insane') {
+            // Insane bots tap-fire jetpack for better control and dodging
+            if (this.wantJet && Math.random() < 0.8) e.vy += jetThrust * 1.25;
+            if (this.wantJet) e.fuel -= FUEL_USE * 0.5;
+            e.jetpacking = this.wantJet && e.fuel > 0;
+        } else {
+            if (this.wantJet && e.fuel > 0) { e.vy += jetThrust; e.fuel -= FUEL_USE; e.jetpacking = true; }
+            else { e.jetpacking = false; }
+        }
         if (this.targetEnemy && this.targetEnemy.alive) {
             const dx = this.targetEnemy.cx - e.cx, dy = this.targetEnemy.cy - e.cy;
             let targetAngle = Math.atan2(dy, dx);
@@ -1546,9 +1558,9 @@ class Camera {
         this.x = 0; this.y = 0; this.w = canvasW; this.h = canvasH;
         this.targetX = 0; this.targetY = 0;
         this.shakeX = 0; this.shakeY = 0;
-        this.zoom = 1.35;
-        this.targetZoom = 1.35;
-        this.userZoom = 1.35; // Baseline user-controlled zoom
+        this.zoom = 1.65;
+        this.targetZoom = 1.65;
+        this.userZoom = 1.65; // Baseline - Closer to player
     }
     follow(entity, mapW, mapH, game = null) {
         // --- Auto Zoom (Dynamic Adaptive View) ---
@@ -1561,18 +1573,18 @@ class Camera {
             }
 
             const speed = Math.sqrt(entity.vx * entity.vx + entity.vy * entity.vy);
-            const speedFactor = Math.min(1.0, speed / 12);
+            const speedFactor = Math.min(1.0, speed / 18);
             const enemyFactor = Math.min(1.0, Math.max(0, (600 - nearestDist) / 400));
 
             // Adjust based on user baseline. 
-            this.targetZoom = this.userZoom - (speedFactor * 0.3) - (enemyFactor * 0.2);
-            this.targetZoom = Math.max(0.6, Math.min(3.0, this.targetZoom));
+            this.targetZoom = this.userZoom - (speedFactor * 0.45) - (enemyFactor * 0.25);
+            this.targetZoom = Math.max(0.7, Math.min(3.0, this.targetZoom));
         } else {
             this.targetZoom = this.userZoom;
         }
 
-        // Apply zoom with smooth interpolation
-        this.zoom += (this.targetZoom - this.zoom) * 0.04;
+        // Apply zoom with smooth interpolation - slightly snappier
+        this.zoom += (this.targetZoom - this.zoom) * 0.055;
 
         const vw = this.w / this.zoom;
         const vh = this.h / this.zoom;
@@ -1680,8 +1692,8 @@ class Game {
             map: 0,
             gameMode: 0,
             sensitivity: parseFloat(localStorage.getItem('wario_sensitivity') || '1.0'),
-            autoZoom: localStorage.getItem('wario_autozoom') === 'true',
-            autoFocus: localStorage.getItem('wario_autofocus') === 'true'
+            autoZoom: (localStorage.getItem('wario_autozoom') || 'true') === 'true',
+            autoFocus: (localStorage.getItem('wario_autofocus') || 'true') === 'true'
         };
         this.audio.enabled = this.settings.sound;
 
@@ -3238,7 +3250,7 @@ class Game {
         // Mobile Buttons
         document.getElementById('v-btn-grenade').ontouchstart = (e) => { e.preventDefault(); if (this.running) this.playerThrowGrenade(); };
         document.getElementById('v-btn-reload').ontouchstart = (e) => { e.preventDefault(); if (this.running) this.playerManualReload(); };
-        document.getElementById('v-btn-melee').ontouchstart = (e) => { e.preventDefault(); };
+        document.getElementById('v-btn-melee').ontouchstart = (e) => { e.preventDefault(); if (this.running) this.playerMelee(); };
 
         // Fullscreen Toggle
         const fsBtn = document.getElementById('btn-fullscreen-toggle');
