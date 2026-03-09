@@ -809,6 +809,9 @@ class MultiplayerClient {
             p.state = msg.state;
             p.state.id = p.id;
             p.state.name = p.name;
+
+            // Ensure the remote player is created and updated in the host's game world
+            this.syncPlayers([p.state]);
         }
 
         // At 20Hz, broadcast all states
