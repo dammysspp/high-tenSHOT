@@ -614,6 +614,9 @@ class RemotePlayer extends Entity {
         this.level = state.level;
         this.xp = state.xp;
         this.jetpacking = state.jetpacking;
+        if (state.color) this.color = state.color;
+        if (state.bodyColor) this.bodyColor = state.bodyColor;
+        if (state.visorColor) this.visorColor = state.visorColor;
         this.lastUpdate = performance.now();
     }
     interpolate() {
@@ -658,7 +661,14 @@ class MultiplayerClient {
         await this.initPeer();
         this.isHost = true;
         this.roomCode = this.playerId; // Use full ID for reliability
-        this.lobbyPlayers = [{ id: this.playerId, name, isHost: true }];
+        this.lobbyPlayers = [{
+            id: this.playerId,
+            name,
+            isHost: true,
+            color: this.game.player.color,
+            bodyColor: this.game.player.bodyColor,
+            visorColor: this.game.player.visorColor
+        }];
         this.isConnected = true;
 
         // Listen for connections
@@ -699,7 +709,12 @@ class MultiplayerClient {
         conn.on('open', () => {
             this.isConnected = true;
             this.connections.set(targetPeerId, conn);
-            this.send('join_request', { name });
+            this.send('join_request', {
+                name,
+                color: this.game.player.color,
+                bodyColor: this.game.player.bodyColor,
+                visorColor: this.game.player.visorColor
+            });
             conn.on('data', (data) => this.handleMessage(data));
         });
         conn.on('close', () => {
@@ -736,7 +751,14 @@ class MultiplayerClient {
         switch (msg.type) {
             case 'join_request':
                 if (this.isHost) {
-                    this.lobbyPlayers.push({ id: fromPeerId, name: msg.name, isHost: false });
+                    this.lobbyPlayers.push({
+                        id: fromPeerId,
+                        name: msg.name,
+                        isHost: false,
+                        color: msg.color,
+                        bodyColor: msg.bodyColor,
+                        visorColor: msg.visorColor
+                    });
                     this.broadcast({ type: 'lobby_state', players: this.lobbyPlayers });
                     this.updateLobbyUI({ players: this.lobbyPlayers });
                 }
@@ -792,7 +814,17 @@ class MultiplayerClient {
         // At 20Hz, broadcast all states
         if (!this.broadcastTimer) {
             this.broadcastTimer = setTimeout(() => {
-                const states = this.lobbyPlayers.map(pl => pl.state || { id: pl.id, name: pl.name });
+                const states = this.lobbyPlayers.map(pl => {
+                    if (pl.state) return pl.state;
+                    // Fallback for players (like host) who haven't sent an update yet
+                    return {
+                        id: pl.id,
+                        name: pl.name,
+                        x: 0, y: 0,
+                        color: pl.color || '#fff',
+                        isAlive: false
+                    };
+                });
                 this.broadcast({ type: 'game_state', players: states });
                 this.broadcastTimer = null;
             }, 50);
