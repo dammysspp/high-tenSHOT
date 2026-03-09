@@ -1623,33 +1623,42 @@ class Game {
     }
 
     setupMenus() {
-        document.getElementById('btn-play').onclick = () => this.startGame();
-        document.getElementById('btn-settings').onclick = () => {
+        const bindBtn = (id, callback) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.onclick = (e) => { e.preventDefault(); callback(); };
+            el.ontouchstart = (e) => { e.preventDefault(); callback(); };
+        };
+
+        bindBtn('btn-play', () => this.startGame());
+        bindBtn('btn-settings', () => {
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('settings-panel').classList.remove('hidden');
-        };
-        document.getElementById('btn-back-settings').onclick = () => {
+        });
+        bindBtn('btn-back-settings', () => {
             document.getElementById('settings-panel').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
-        };
-        document.getElementById('btn-customize').onclick = () => {
+        });
+        bindBtn('btn-customize', () => {
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('customize-panel').classList.remove('hidden');
             this.updateCustomizeUI();
-        };
-        document.getElementById('btn-back-customize').onclick = () => {
+        });
+        bindBtn('btn-back-customize', () => {
             document.getElementById('customize-panel').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
             localStorage.setItem('wario_custom', JSON.stringify(this.customization));
-        };
-        document.getElementById('btn-play-again').onclick = () => this.startGame();
-        document.getElementById('btn-main-menu').onclick = () => {
+        });
+        bindBtn('btn-play-again', () => this.startGame());
+        bindBtn('btn-main-menu', () => {
             document.getElementById('game-over-screen').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
-        };
+        });
+
         // Settings controls
         document.querySelectorAll('.setting-minus,.setting-plus').forEach(btn => {
-            btn.onclick = () => {
+            const handle = (e) => {
+                e.preventDefault();
                 const s = btn.dataset.setting;
                 const inc = btn.classList.contains('setting-plus') ? 1 : -1;
                 if (s === 'botCount') { this.settings.botCount = Math.max(1, Math.min(12, this.settings.botCount + inc)); }
@@ -1667,13 +1676,15 @@ class Game {
                 }
                 this.updateSettingsUI();
             };
+            btn.onclick = handle;
+            btn.ontouchstart = handle;
         });
         this.updateSettingsUI();
 
         // Multiplayer Menus
-        document.getElementById('btn-multiplayer').onclick = () => {
+        bindBtn('btn-multiplayer', () => {
             alert("MULTIPLAYER: A work in progress! Coming soon.");
-        };
+        });
 
         document.getElementById('btn-create-lobby').onclick = async () => {
             const name = prompt("Enter your name:", "Soldier") || "Soldier";

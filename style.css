@@ -141,7 +141,7 @@ body {
 
 .logo-title {
     font-family: var(--font-display);
-    font-size: 6rem;
+    font-size: 5.5rem;
     font-weight: 900;
     color: #fff;
     text-shadow:
@@ -1105,19 +1105,22 @@ body.is-mobile #mobile-controls {
 
 #btn-fullscreen-toggle {
     position: fixed;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 8px;
+    right: 12px;
+    left: auto;
+    transform: none;
     z-index: 1001;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 6px 16px;
-    border-radius: 20px;
+    padding: 8px 16px;
+    border-radius: 4px;
     color: #fff;
     font-family: var(--font-ui);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+    font-weight: 700;
     display: none;
     cursor: pointer;
+    backdrop-filter: blur(4px);
 }
 
 body.is-mobile #btn-fullscreen-toggle {
@@ -1127,34 +1130,79 @@ body.is-mobile #btn-fullscreen-toggle {
 /* --- Responsive Adjustments --- */
 @media (max-width: 900px) {
     .logo-title {
-        font-size: 3.5rem;
+        font-size: 3.2rem;
         letter-spacing: 4px;
+        padding-top: 10px;
+    }
+
+    .logo-subtitle {
+        font-size: 0.8rem;
+        letter-spacing: 6px;
+    }
+
+    .menu-content {
+        gap: 15px;
+    }
+
+    .menu-buttons {
+        gap: 8px;
+        width: 260px;
+    }
+
+    .menu-btn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
     }
 
     #hud-player-stats {
         min-width: 180px;
-        scale: 0.8;
+        scale: 0.75;
         transform-origin: top left;
+        top: 10px;
+        left: 10px;
     }
 
     #hud-match-stats {
-        scale: 0.8;
+        scale: 0.75;
         transform-origin: top right;
+        top: 10px;
+        right: 10px;
     }
 
     #hud-leaderboard {
-        scale: 0.8;
+        scale: 0.65;
         transform-origin: top right;
-        top: 120px;
-    }
-
-    .leaderboard-header {
-        font-size: 0.8rem;
+        top: 90px;
+        right: 10px;
     }
 
     .settings-container {
         width: 90vw;
         max-width: 400px;
-        padding: 20px;
+        padding: 15px;
+    }
+}
+
+@media (max-height: 500px) {
+    .menu-content {
+        gap: 10px;
+    }
+
+    .logo-title {
+        font-size: 2.6rem;
+        letter-spacing: 3px;
+    }
+
+    .logo-subtitle {
+        margin-top: 2px;
+    }
+
+    .menu-buttons {
+        width: 240px;
+    }
+
+    .menu-btn {
+        padding: 6px 16px;
+        font-size: 0.8rem;
     }
 }
