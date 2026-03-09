@@ -1662,10 +1662,7 @@ class Game {
 
         // Multiplayer Menus
         document.getElementById('btn-multiplayer').onclick = () => {
-            document.getElementById('main-menu').classList.add('hidden');
-            document.getElementById('multiplayer-lobby').classList.remove('hidden');
-            document.getElementById('lobby-selection').classList.remove('hidden');
-            document.getElementById('lobby-waiting').classList.add('hidden');
+            alert("MULTIPLAYER: A work in progress! Coming soon.");
         };
 
         document.getElementById('btn-create-lobby').onclick = async () => {
