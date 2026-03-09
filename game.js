@@ -665,9 +665,9 @@ class MultiplayerClient {
             id: this.playerId,
             name,
             isHost: true,
-            color: this.game.player.color,
-            bodyColor: this.game.player.bodyColor,
-            visorColor: this.game.player.visorColor
+            color: ARMOR_COLORS[this.game.customization.armorIdx].hex,
+            bodyColor: `hsl(${Math.random() * 360},50%,35%)`, // Standard logic from Entity constructor
+            visorColor: VISOR_COLORS[this.game.customization.visorIdx].hex
         }];
         this.isConnected = true;
 
@@ -711,9 +711,9 @@ class MultiplayerClient {
             this.connections.set(targetPeerId, conn);
             this.send('join_request', {
                 name,
-                color: this.game.player.color,
-                bodyColor: this.game.player.bodyColor,
-                visorColor: this.game.player.visorColor
+                color: ARMOR_COLORS[this.game.customization.armorIdx].hex,
+                bodyColor: `hsl(${Math.random() * 360},50%,35%)`,
+                visorColor: VISOR_COLORS[this.game.customization.visorIdx].hex
             });
             conn.on('data', (data) => this.handleMessage(data));
         });
@@ -821,7 +821,7 @@ class MultiplayerClient {
                         id: pl.id,
                         name: pl.name,
                         x: 0, y: 0,
-                        color: pl.color || '#fff',
+                        color: pl.color || ARMOR_COLORS[this.game.customization.armorIdx].hex,
                         isAlive: false
                     };
                 });
