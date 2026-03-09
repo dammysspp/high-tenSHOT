@@ -871,7 +871,9 @@ class MultiplayerClient {
             this.handleRemoteAction(msg); // Apply to self as well
         } else if (action === 'request_respawn') {
             const spawnIdx = Math.floor(Math.random() * 10);
-            this.broadcast({ type: 'remote_action', playerId, action: 'respawn', data: { spawnIdx } });
+            const respawnMsg = { type: 'remote_action', playerId, action: 'respawn', data: { spawnIdx } };
+            this.broadcast(respawnMsg);
+            this.handleRemoteAction(respawnMsg);
         } else {
             this.broadcast({ type: 'remote_action', playerId, action, data });
         }
