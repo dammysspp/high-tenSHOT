@@ -1788,7 +1788,7 @@ class Game {
         this.entities = []; this.bullets = []; this.bots = []; this.grenades = []; this.gibs = [];
         this.damageNumbers = []; this.hitMarkers = []; this.bloodDecals = [];
         this.shockwaves = []; this.flashAlpha = 0;
-        this.particles = new ParticleSystem();
+        this.particles = new ParticleSystem(this);
         this.killFeedEntries = []; this.gameOver = false;
         this.screenShake = 0; this.levelUpDisplay = null;
         this.timeScale = 1; this.slowmoTimer = 0;
