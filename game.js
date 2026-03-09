@@ -1498,8 +1498,9 @@ class Camera {
         this.x = 0; this.y = 0; this.w = canvasW; this.h = canvasH;
         this.targetX = 0; this.targetY = 0;
         this.shakeX = 0; this.shakeY = 0;
-        this.zoom = 1.0;
-        this.targetZoom = 1.0;
+        this.zoom = 1.35;
+        this.targetZoom = 1.35;
+        this.userZoom = 1.35; // Baseline user-controlled zoom
     }
     follow(entity, mapW, mapH, game = null) {
         // --- Auto Zoom (Dynamic Adaptive View) ---
@@ -1511,17 +1512,15 @@ class Camera {
                 if (d < nearestDist) nearestDist = d;
             }
 
-            // Calculate factors for zooming
             const speed = Math.sqrt(entity.vx * entity.vx + entity.vy * entity.vy);
             const speedFactor = Math.min(1.0, speed / 12);
-            // Zoom out when enemies are at mid-range or when moving fast
             const enemyFactor = Math.min(1.0, Math.max(0, (600 - nearestDist) / 400));
 
-            // Smoother target zoom calculation: 1.0 is default, 0.75 is zoomed out
-            this.targetZoom = 1.0 - (speedFactor * 0.15) - (enemyFactor * 0.1);
-            this.targetZoom = Math.max(0.7, Math.min(1.1, this.targetZoom));
+            // Adjust based on user baseline. 
+            this.targetZoom = this.userZoom - (speedFactor * 0.3) - (enemyFactor * 0.2);
+            this.targetZoom = Math.max(0.6, Math.min(3.0, this.targetZoom));
         } else {
-            this.targetZoom = 1.0;
+            this.targetZoom = this.userZoom;
         }
 
         // Apply zoom with smooth interpolation
@@ -1662,10 +1661,10 @@ class Game {
             if (e.key.toLowerCase() === 'e' && this.running) this.tryPickup();
             if (e.key.toLowerCase() === 'g' && this.running) this.playerThrowGrenade();
             if (e.key.toLowerCase() === 'r' && this.running) this.playerManualReload();
-            // Zoom controls
-            if ((e.key === '=' || e.key === '+') && this.running) this.camera.targetZoom = Math.min(2.5, this.camera.targetZoom + 0.1);
-            if ((e.key === '-' || e.key === '_') && this.running) this.camera.targetZoom = Math.max(0.5, this.camera.targetZoom - 0.1);
-            if (e.key.toLowerCase() === '0' && this.running) this.camera.targetZoom = 1.0;
+            // Zoom controls (Modify baseline)
+            if ((e.key === '=' || e.key === '+') && this.running) this.camera.userZoom = Math.min(2.5, this.camera.userZoom + 0.1);
+            if ((e.key === '-' || e.key === '_') && this.running) this.camera.userZoom = Math.max(0.6, this.camera.userZoom - 0.1);
+            if (e.key.toLowerCase() === '0' && this.running) this.camera.userZoom = 1.35;
         });
         window.addEventListener('keyup', e => this.keys[e.key.toLowerCase()] = false);
         window.addEventListener('mousemove', e => {
@@ -1681,8 +1680,8 @@ class Game {
         window.addEventListener('mouseup', e => { if (e.button === 0) this.mouse.down = false; });
         window.addEventListener('wheel', e => {
             if (!this.running) return;
-            if (e.deltaY < 0) this.camera.targetZoom = Math.min(2.5, this.camera.targetZoom + 0.1);
-            else this.camera.targetZoom = Math.max(0.5, this.camera.targetZoom - 0.1);
+            if (e.deltaY < 0) this.camera.userZoom = Math.min(2.5, this.camera.userZoom + 0.1);
+            else this.camera.userZoom = Math.max(0.6, this.camera.userZoom - 0.1);
         });
         this.canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
