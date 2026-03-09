@@ -1501,17 +1501,66 @@ class Camera {
         this.zoom = 1.0;
         this.targetZoom = 1.0;
     }
-    follow(entity, mapW, mapH) {
-        this.zoom += (this.targetZoom - this.zoom) * 0.1;
+    follow(entity, mapW, mapH, game = null) {
+        // --- Auto Zoom (Dynamic Adaptive View) ---
+        if (game && game.settings.autoZoom && entity.alive) {
+            let nearestDist = 1200;
+            for (const other of game.entities) {
+                if (other === entity || !other.alive) continue;
+                const d = Math.sqrt((other.cx - entity.cx) ** 2 + (other.cy - entity.cy) ** 2);
+                if (d < nearestDist) nearestDist = d;
+            }
+
+            // Calculate factors for zooming
+            const speed = Math.sqrt(entity.vx * entity.vx + entity.vy * entity.vy);
+            const speedFactor = Math.min(1.0, speed / 12);
+            // Zoom out when enemies are at mid-range or when moving fast
+            const enemyFactor = Math.min(1.0, Math.max(0, (600 - nearestDist) / 400));
+
+            // Smoother target zoom calculation: 1.0 is default, 0.75 is zoomed out
+            this.targetZoom = 1.0 - (speedFactor * 0.15) - (enemyFactor * 0.1);
+            this.targetZoom = Math.max(0.7, Math.min(1.1, this.targetZoom));
+        } else {
+            this.targetZoom = 1.0;
+        }
+
+        // Apply zoom with smooth interpolation
+        this.zoom += (this.targetZoom - this.zoom) * 0.04;
 
         const vw = this.w / this.zoom;
         const vh = this.h / this.zoom;
 
-        this.targetX = entity.cx - vw / 2;
-        this.targetY = entity.cy - vh / 2;
+        // --- Auto Focus (Dynamic POI) ---
+        let focusX = entity.cx;
+        let focusY = entity.cy;
 
-        this.x += (this.targetX - this.x) * 0.08;
-        this.y += (this.targetY - this.y) * 0.08;
+        if (game && game.settings.autoFocus && entity.alive) {
+            let nearest = null, nearDist = 700;
+            for (const other of game.entities) {
+                if (other === entity || !other.alive) continue;
+                const d = Math.sqrt((other.cx - entity.cx) ** 2 + (other.cy - entity.cy) ** 2);
+                if (d < nearDist) { nearDist = d; nearest = other; }
+            }
+
+            if (nearest) {
+                // Shift focus towards threats but keep player centered
+                const bias = 0.38;
+                const idealX = entity.cx * (1 - bias) + nearest.cx * bias;
+                const idealY = entity.cy * (1 - bias) + nearest.cy * bias;
+
+                // Maximum look-ahead distance
+                const maxOff = 180;
+                focusX = Math.max(entity.cx - maxOff, Math.min(entity.cx + maxOff, idealX));
+                focusY = Math.max(entity.cy - maxOff, Math.min(entity.cy + maxOff, idealY));
+            }
+        }
+
+        this.targetX = focusX - vw / 2;
+        this.targetY = focusY - vh / 2;
+
+        // Smooth camera movement
+        this.x += (this.targetX - this.x) * 0.085;
+        this.y += (this.targetY - this.y) * 0.085;
 
         // Constraint boundaries based on visible world size
         this.x = Math.max(0, Math.min(this.x, mapW - vw));
@@ -1583,7 +1632,9 @@ class Game {
             graphics: this.isMobile ? 'Low' : (localStorage.getItem('wario_graphics') || 'High'),
             map: 0,
             gameMode: 0,
-            sensitivity: parseFloat(localStorage.getItem('wario_sensitivity') || '1.0')
+            sensitivity: parseFloat(localStorage.getItem('wario_sensitivity') || '1.0'),
+            autoZoom: localStorage.getItem('wario_autozoom') === 'true',
+            autoFocus: localStorage.getItem('wario_autofocus') === 'true'
         };
         this.audio.enabled = this.settings.sound;
 
@@ -1692,6 +1743,14 @@ class Game {
                     this.settings.sensitivity = Math.max(0.1, Math.min(3.0, Math.round((this.settings.sensitivity + inc * 0.1) * 10) / 10));
                     localStorage.setItem('wario_sensitivity', this.settings.sensitivity);
                 }
+                if (s === 'autoZoom') {
+                    this.settings.autoZoom = !this.settings.autoZoom;
+                    localStorage.setItem('wario_autozoom', this.settings.autoZoom);
+                }
+                if (s === 'autoFocus') {
+                    this.settings.autoFocus = !this.settings.autoFocus;
+                    localStorage.setItem('wario_autofocus', this.settings.autoFocus);
+                }
                 this.updateSettingsUI();
             };
             btn.onclick = handle;
@@ -1766,6 +1825,8 @@ class Game {
         if (gmEl) gmEl.textContent = GAME_MODES[this.settings.gameMode];
         const sensEl = document.getElementById('setting-sensitivity');
         if (sensEl) sensEl.textContent = this.settings.sensitivity.toFixed(1) + 'x';
+        if (document.getElementById('setting-autoZoom')) document.getElementById('setting-autoZoom').textContent = this.settings.autoZoom ? 'ON' : 'OFF';
+        if (document.getElementById('setting-autoFocus')) document.getElementById('setting-autoFocus').textContent = this.settings.autoFocus ? 'ON' : 'OFF';
     }
 
     startGame(isMultiplayer = false) {
@@ -2098,7 +2159,7 @@ class Game {
         if (this.flashAlpha > 0) this.flashAlpha *= 0.88;
 
         // Camera
-        if (this.player.alive) this.camera.follow(this.player, this.map.w, this.map.h);
+        if (this.player.alive) this.camera.follow(this.player, this.map.w, this.map.h, this);
         if (this.screenShake > 0) { this.camera.applyShake(this.screenShake); this.screenShake *= 0.85; if (this.screenShake < 0.5) this.screenShake = 0; }
 
         // Level up display timer
