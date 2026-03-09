@@ -730,8 +730,8 @@ class MultiplayerClient {
     send(type, data) {
         const msg = JSON.stringify({ type, playerId: this.playerId, ...data });
         if (this.isHost) {
-            // As host, we handle our own message
-            this.handleMessage(JSON.parse(msg));
+            // As host, use handleHostAction to facilitate broadcast + local handling
+            this.handleHostAction(JSON.parse(msg));
         } else {
             // As client, send to host
             this.connections.forEach(conn => conn.send(msg));
