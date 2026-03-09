@@ -28,7 +28,7 @@ const GRENADE_FUSE = 2200;
 const GRENADE_RADIUS = 120;
 const GRENADE_DAMAGE = 85;
 const GRENADE_COOLDOWN = 1200;
-const RELOAD_TIMES = { pistol: 0, smg: 1800, shotgun: 2200, sniper: 2500, rocket: 3000 };
+const RELOAD_TIMES = { pistol: 0, smg: 1800, assault: 2000, shotgun: 2200, sniper: 2500, rocket: 3000, gl: 2800, flame: 3500 };
 const GIB_LIFETIME = 4000;
 const GIB_BOUNCE_DAMP = 0.45;
 const GIB_FRICTION = 0.97;
@@ -49,9 +49,12 @@ const LEVEL_PERKS = {
 const WEAPONS = {
     pistol: { name: 'PISTOL', damage: 18, fireRate: 350, bulletSpeed: 14, ammo: Infinity, spread: 0.03, recoil: 1.5, color: '#ffe066', bulletW: 10, bulletH: 3, auto: false, explosive: false, pellets: 1, ricochet: 0 },
     smg: { name: 'SMG', damage: 12, fireRate: 80, bulletSpeed: 16, ammo: 120, spread: 0.07, recoil: 0.8, color: '#ffa726', bulletW: 8, bulletH: 2, auto: true, explosive: false, pellets: 1, ricochet: 0 },
+    assault: { name: 'ASSAULT RIFLE', damage: 20, fireRate: 150, bulletSpeed: 18, ammo: 90, spread: 0.04, recoil: 1.2, color: '#81c784', bulletW: 12, bulletH: 2.5, auto: true, explosive: false, pellets: 1, ricochet: 0 },
     shotgun: { name: 'SHOTGUN', damage: 9, fireRate: 600, bulletSpeed: 13, ammo: 30, spread: 0.18, recoil: 4, color: '#ff7043', bulletW: 6, bulletH: 3, auto: false, explosive: false, pellets: 7, ricochet: 0 },
     sniper: { name: 'SNIPER', damage: 70, fireRate: 1000, bulletSpeed: 28, ammo: 15, spread: 0.005, recoil: 6, color: '#29b6f6', bulletW: 18, bulletH: 2, auto: false, explosive: false, pellets: 1, ricochet: 0, laser: true },
     rocket: { name: 'ROCKET', damage: 55, fireRate: 1200, bulletSpeed: 8, ammo: 8, spread: 0.02, recoil: 5, color: '#ef5350', bulletW: 12, bulletH: 5, auto: false, explosive: true, pellets: 1, explodeRadius: 70, ricochet: 0 },
+    gl: { name: 'GRENADE LAUNCHER', damage: 50, fireRate: 800, bulletSpeed: 12, ammo: 12, spread: 0.05, recoil: 4, color: '#ba68c8', bulletW: 10, bulletH: 6, auto: false, explosive: true, pellets: 1, explodeRadius: 60, arc: true },
+    flame: { name: 'FLAMETHROWER', damage: 5, fireRate: 30, bulletSpeed: 10, ammo: 300, spread: 0.15, recoil: 0.2, color: '#ff9800', bulletW: 15, bulletH: 15, auto: true, explosive: false, pellets: 1, burn: true, fade: true },
     bouncer: { name: 'BOUNCER', damage: 22, fireRate: 300, bulletSpeed: 12, ammo: 40, spread: 0.04, recoil: 2, color: '#e040fb', bulletW: 8, bulletH: 4, auto: false, explosive: false, pellets: 1, ricochet: 3 }
 };
 
@@ -1143,22 +1146,35 @@ class Bullet {
     constructor(x, y, vx, vy, owner, weaponKey) {
         this.x = x; this.y = y; this.vx = vx; this.vy = vy;
         this.owner = owner; this.weaponKey = weaponKey;
-        this.w = WEAPONS[weaponKey].bulletW; this.h = WEAPONS[weaponKey].bulletH;
-        this.damage = WEAPONS[weaponKey].damage;
-        this.color = WEAPONS[weaponKey].color;
-        this.explosive = WEAPONS[weaponKey].explosive;
-        this.explodeRadius = WEAPONS[weaponKey].explodeRadius || 0;
-        this.ricochetLeft = WEAPONS[weaponKey].ricochet || 0;
-        this.life = 1500; this.dead = false;
+        const w = WEAPONS[weaponKey];
+        this.w = w.bulletW; this.h = w.bulletH;
+        this.damage = w.damage;
+        this.color = w.color;
+        this.explosive = w.explosive;
+        this.explodeRadius = w.explodeRadius || 0;
+        this.ricochetLeft = w.ricochet || 0;
+        this.arc = w.arc || false;
+        this.burn = w.burn || false;
+        this.fade = w.fade || false;
+        this.life = w.fade ? 100 : 1500;
+        this.dead = false;
         this.dist = 0; this.maxDist = 1200;
     }
     update(game) {
         const prevX = this.x, prevY = this.y;
         this.x += this.vx; this.y += this.vy;
-        if (!this.explosive) this.vy += 0.03;
+
+        // Weapon physics traits
+        if (this.arc) this.vy += 0.15;
+        else if (!this.explosive) this.vy += 0.02; // Slight gravity for all bullets
+
+        if (this.burn && Math.random() < 0.4) {
+            game.particles.add(new Particle(this.x, this.y, (Math.random() - 0.5), (Math.random() - 0.5), 150, 8 + Math.random() * 8, '#ff5722', true));
+        }
+
         this.dist += Math.sqrt((this.x - prevX) ** 2 + (this.y - prevY) ** 2);
         this.life -= 16;
-        if (this.life <= 0 || this.dist > this.maxDist) { this.dead = true; return; }
+        if (this.life <= 0 || (this.dist > this.maxDist && !this.fade)) { this.dead = true; return; }
         // Hit platforms
         for (const p of game.map.platforms) {
             if (this.x > p.x && this.x < p.x + p.w && this.y > p.y && this.y < p.y + p.h) {
@@ -1423,6 +1439,8 @@ class BotAI {
     }
     think(game) {
         const e = this.entity;
+        const isInsane = this.diff.name === 'Insane';
+
         // Find nearest enemy
         let nearest = null, nearDist = Infinity;
         for (const other of game.entities) {
@@ -1434,7 +1452,6 @@ class BotAI {
         // Movement decision
         if (nearest) {
             const dx = nearest.cx - e.cx;
-            const isInsane = this.diff.name === 'Insane';
             const optimalDist = isInsane ? (50 + Math.random() * 100) : (150 + Math.random() * 150);
 
             if (nearDist > optimalDist + 50) this.moveDir = Math.sign(dx);
@@ -1696,6 +1713,7 @@ class Game {
             if ((e.key === '=' || e.key === '+') && this.running) this.camera.userZoom = Math.min(2.5, this.camera.userZoom + 0.1);
             if ((e.key === '-' || e.key === '_') && this.running) this.camera.userZoom = Math.max(0.6, this.camera.userZoom - 0.1);
             if (e.key.toLowerCase() === '0' && this.running) this.camera.userZoom = 1.35;
+            if (e.key.toLowerCase() === 'f' && this.running) this.playerMelee();
         });
         window.addEventListener('keyup', e => this.keys[e.key.toLowerCase()] = false);
         window.addEventListener('mousemove', e => {
@@ -1759,12 +1777,25 @@ class Game {
         bindBtn('btn-customize', () => {
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('customize-panel').classList.remove('hidden');
+            this.initCustomizeUI();
             this.updateCustomizeUI();
         });
         bindBtn('btn-back-customize', () => {
             document.getElementById('customize-panel').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');
             localStorage.setItem('wario_custom', JSON.stringify(this.customization));
+        });
+
+        // Customize Tabs Implementation
+        document.querySelectorAll('.cust-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                document.querySelectorAll('.cust-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.cust-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('cust-' + tab).classList.add('active');
+                if (this.audio) this.audio.play('pickup');
+            });
         });
         bindBtn('btn-play-again', () => this.startGame());
         bindBtn('btn-main-menu', () => {
@@ -1850,19 +1881,135 @@ class Game {
         this.multiplayer.startUpdateLoop();
     }
 
+    playerManualReload() { if (this.player && this.player.alive) this.player.startReload(this); }
+
+    playerMelee() {
+        if (!this.player || !this.player.alive) return;
+        const p = this.player;
+        const reach = 50;
+        const dir = p.facingRight ? 1 : -1;
+        const mx = p.cx + dir * 25;
+        const my = p.cy;
+
+        let hit = false;
+        for (const e of this.entities) {
+            if (e === p || !e.alive) continue;
+            const detX = e.cx - mx, detY = e.cy - my;
+            if (Math.sqrt(detX * detX + detY * detY) < reach) {
+                e.takeDamage(35, p, this, false); // Melee does 35 dmg
+                hit = true;
+            }
+        }
+
+        if (hit) {
+            this.audio.play('hit');
+            this.screenShake = 5;
+            this.particles.add(new Particle(mx, my, dir * 2, (Math.random() - 0.5) * 2, 100, 15, 'rgba(255,255,255,0.3)', false, true));
+        }
+    }
+
+    initCustomizeUI() {
+        if (this._custInited) return; this._custInited = true;
+        const vGrid = document.getElementById('visor-colors');
+        VISOR_COLORS.forEach((vc, i) => {
+            const el = document.createElement('div');
+            el.className = 'color-swatch' + (i === this.customization.visorIdx ? ' active' : '');
+            el.style.backgroundColor = vc.hex;
+            el.onclick = () => {
+                this.customization.visorIdx = i;
+                document.querySelectorAll('#visor-colors .color-swatch').forEach(s => s.classList.remove('active'));
+                el.classList.add('active');
+                this.updateCustomizeUI();
+            };
+            vGrid.appendChild(el);
+        });
+        const aGrid = document.getElementById('armor-colors');
+        ARMOR_COLORS.forEach((ac, i) => {
+            const el = document.createElement('div');
+            el.className = 'color-swatch' + (i === this.customization.armorIdx ? ' active' : '');
+            el.style.backgroundColor = ac.hex;
+            el.onclick = () => {
+                this.customization.armorIdx = i;
+                document.querySelectorAll('#armor-colors .color-swatch').forEach(s => s.classList.remove('active'));
+                el.classList.add('active');
+                this.updateCustomizeUI();
+            };
+            aGrid.appendChild(el);
+        });
+
+        const wPreview = document.getElementById('weapon-previews');
+        if (wPreview) {
+            Object.keys(WEAPONS).forEach(key => {
+                const w = WEAPONS[key];
+                const card = document.createElement('div');
+                card.className = 'weapon-card';
+                card.innerHTML = `<label style="color:${w.color}">${w.name}</label><div style="font-size:0.5rem; color:#888">DMG:${w.damage}</div>`;
+                wPreview.appendChild(card);
+            });
+        }
+    }
+
     updateCustomizeUI() {
         const a = ARMOR_COLORS[this.customization.armorIdx];
         const v = VISOR_COLORS[this.customization.visorIdx];
-        const acEl = document.getElementById('setting-armorColor');
-        if (acEl) { acEl.textContent = a.name; acEl.style.color = a.hex; }
-        const vcEl = document.getElementById('setting-visorColor');
-        if (vcEl) vcEl.textContent = v.name;
         const wsEl = document.getElementById('setting-weaponSkin');
         if (wsEl) wsEl.textContent = WEAPON_SKINS[this.customization.skinIdx];
         const pdEl = document.getElementById('prestige-display');
-        if (pdEl) pdEl.textContent = this.prestige > 0 ? '⭐'.repeat(this.prestige) : '☆ 0';
+        if (pdEl) pdEl.textContent = this.prestige > 0 ? '☆ ' + this.prestige : '☆ 0';
         const md = document.getElementById('medals-display');
-        if (md) md.textContent = this.allMedals.map(m => MEDAL_DEFS[m]?.icon || '').join(' ');
+        if (md) md.innerHTML = this.allMedals.length > 0 ?
+            this.allMedals.map(m => `<div class="medal-slot" title="${MEDAL_DEFS[m]?.name}">${MEDAL_DEFS[m]?.icon}</div>`).join('') :
+            '<div style="grid-column: 1/-1; padding: 20px; font-size: 0.6rem; color: #555;">NO MEDALS YET</div>';
+
+        // Draw avatar preview
+        const canvas = document.getElementById('avatarCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const sx = canvas.width / 2, sy = canvas.height / 2 + 20;
+        const scale = 4.5;
+
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.scale(scale, scale);
+
+        // Simplistic preview mimicking Mini Militia
+        // Legs
+        ctx.fillStyle = '#1a237e'; // Body/Pants
+        ctx.fillRect(-6, 2, 5, 12);
+        ctx.fillRect(1, 2, 5, 12);
+        // Boots
+        ctx.fillStyle = '#333';
+        ctx.fillRect(-6, 12, 6, 4);
+        ctx.fillRect(1, 12, 6, 4);
+
+        // Torso
+        ctx.fillStyle = a.hex;
+        ctx.fillRect(-8, -12, 16, 18);
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(-8, -8, 16, 2);
+
+        // Arms
+        ctx.fillStyle = a.hex;
+        ctx.fillRect(-12, -10, 4, 10);
+        ctx.fillRect(8, -10, 4, 10);
+
+        // Head
+        ctx.fillStyle = '#e8b89d'; // Skin
+        ctx.beginPath(); ctx.arc(0, -18, 10, 0, Math.PI * 2); ctx.fill();
+
+        // Helmet (Armor Color)
+        ctx.fillStyle = a.hex;
+        ctx.beginPath(); ctx.arc(0, -20, 11, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-11, -21, 22, 6);
+
+        // Visor
+        ctx.fillStyle = v.hex;
+        ctx.shadowBlur = 10; ctx.shadowColor = v.hex;
+        ctx.fillRect(-5, -20, 10, 4);
+
+        ctx.restore();
     }
 
     updateSettingsUI() {
@@ -1946,7 +2093,7 @@ class Game {
                     bot.maxShield = 60; // Better shields
                     bot.shield = 60;
                     // Give them a random secondary that isn't just a pistol
-                    const powerWeapons = ['smg', 'shotgun', 'sniper', 'rocket', 'bouncer'];
+                    const powerWeapons = ['smg', 'assault', 'shotgun', 'sniper', 'rocket', 'gl', 'flame', 'bouncer'];
                     bot.equipWeapon(powerWeapons[Math.floor(Math.random() * powerWeapons.length)]);
                 }
 
@@ -1995,17 +2142,17 @@ class Game {
             if (this.keys['a']) { this.player.vx -= MOVE_SPEED * 0.2; this.player.facingRight = false; }
             if (this.keys['d']) { this.player.vx += MOVE_SPEED * 0.2; this.player.facingRight = true; }
             if (this.keys['w'] && this.player.fuel > 0) {
-                this.player.vy += JETPACK_THRUST;
+                this.player.vy += JETPACK_THRUST * 1.1;
                 this.player.fuel -= FUEL_USE;
-                this.player.jetpacking = true;
-                this.player.vy -= 1.0;
                 this.player.jetpacking = true;
                 if (Math.random() < 0.15) this.audio.play('jetpack');
             } else if (this.isMobile && this.touch.left.active && this.touch.left.y < -0.3) {
                 this.player.vy -= 0.8;
                 this.player.jetpacking = true;
                 if (Math.random() < 0.1) this.audio.play('jetpack');
-            } else { this.player.jetpacking = false; }
+            } else {
+                this.player.jetpacking = false;
+            }
 
             if (this.keys['s']) { this.player.vy += 0.5; }
 

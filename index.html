@@ -7,6 +7,7 @@
     <meta name="description"
         content="War.io - A fast-paced 2D jetpack arena shooter. Battle AI bots in chaotic combat with multiple weapons, jetpack physics, and explosive action.">
     <title>War.io - Jetpack Arena Shooter</title>
+    <link rel="icon" href="data:,">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Press+Start+2P&display=swap"
@@ -93,44 +94,78 @@
         </div>
     </div>
 
-    <!-- Customize Panel -->
     <div id="customize-panel" class="menu-screen hidden">
-        <div class="settings-container" style="width:480px">
-            <h2 class="settings-title">CUSTOMIZE</h2>
-            <div class="setting-group">
-                <label>Armor Color</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="armorColor">←</button>
-                    <span id="setting-armorColor" class="setting-value">🔵 Cyan</span>
-                    <button class="setting-plus" data-setting="armorColor">→</button>
+        <div class="customize-container">
+            <h2 class="settings-title">CUSTOMIZE AVATAR</h2>
+
+            <div class="customize-layout">
+                <div class="customize-sidebar">
+                    <button class="cust-tab active" data-tab="avatar">VISOR</button>
+                    <button class="cust-tab" data-tab="armor">ARMOR</button>
+                    <button class="cust-tab" data-tab="weapons">WEAPONS</button>
+                    <button class="cust-tab" data-tab="medals">MEDALS</button>
+                </div>
+
+                <div class="customize-center">
+                    <div class="avatar-preview-box">
+                        <canvas id="avatarCanvas" width="220" height="280"></canvas>
+                    </div>
+                </div>
+
+                <div class="customize-options">
+                    <!-- Visor Tab Content -->
+                    <div id="cust-avatar" class="cust-content active">
+                        <div class="cust-group">
+                            <label>Visor Glow</label>
+                            <div class="color-grid" id="visor-colors">
+                                <!-- Colors injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Armor Tab Content -->
+                    <div id="cust-armor" class="cust-content">
+                        <div class="cust-group">
+                            <label>Plating Color</label>
+                            <div class="color-grid" id="armor-colors">
+                                <!-- Colors injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weapons Tab Content -->
+                    <div id="cust-weapons" class="cust-content">
+                        <div class="cust-group">
+                            <label>Weapon Skins</label>
+                            <div class="setting-control" style="width: 100%; margin-top: 10px;">
+                                <button class="setting-minus" data-setting="weaponSkin">←</button>
+                                <span id="setting-weaponSkin" class="setting-value">Default</span>
+                                <button class="setting-plus" data-setting="weaponSkin">→</button>
+                            </div>
+                        </div>
+                        <div id="weapon-previews" class="weapon-grid">
+                            <!-- Visual weapon list here -->
+                        </div>
+                    </div>
+
+                    <!-- Medals Tab Content -->
+                    <div id="cust-medals" class="cust-content">
+                        <label>Achievements</label>
+                        <div id="medals-display" class="medals-grid"></div>
+                    </div>
                 </div>
             </div>
-            <div class="setting-group">
-                <label>Visor Color</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="visorColor">←</button>
-                    <span id="setting-visorColor" class="setting-value">🟢 Green</span>
-                    <button class="setting-plus" data-setting="visorColor">→</button>
+
+            <div class="customize-footer">
+                <div class="prestige-box">
+                    <span class="label">PRESTIGE LEVEL</span>
+                    <span id="prestige-display" class="value">☆ 0</span>
                 </div>
+                <button id="btn-back-customize" class="menu-btn primary-btn">
+                    <span class="btn-icon">✓</span>
+                    <span class="btn-text">SAVE & EXIT</span>
+                </button>
             </div>
-            <div class="setting-group">
-                <label>Weapon Skin</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="weaponSkin">←</button>
-                    <span id="setting-weaponSkin" class="setting-value">Default</span>
-                    <button class="setting-plus" data-setting="weaponSkin">→</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Prestige</label>
-                <span id="prestige-display" class="setting-value" style="color:#ffd700">☆ 0</span>
-            </div>
-            <div id="medals-display"
-                style="margin-top:8px;text-align:center;font-size:0.8rem;color:#aaa;letter-spacing:1px"></div>
-            <button id="btn-back-customize" class="menu-btn">
-                <span class="btn-icon">←</span>
-                <span class="btn-text">BACK</span>
-            </button>
         </div>
     </div>
 

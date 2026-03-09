@@ -252,52 +252,182 @@ body {
 }
 
 /* ============================================
-   SETTINGS
+   CUSTOMIZE
    ============================================ */
 
-.settings-container {
+.customize-container {
     background: var(--bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 40px;
-    width: 420px;
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 30px;
+    width: 900px;
+    max-width: 95vw;
+    height: 550px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 }
 
-.settings-title {
-    font-family: var(--font-display);
-    font-size: 1.8rem;
-    color: var(--accent);
-    letter-spacing: 5px;
-    text-align: center;
+.customize-layout {
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    overflow: hidden;
     margin-bottom: 20px;
 }
 
-.settings-tabs {
+.customize-sidebar {
+    width: 140px;
     display: flex;
-    gap: 8px;
-    margin-bottom: 25px;
-    padding: 4px;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cust-tab {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-dim);
+    padding: 15px 10px;
+    border-radius: 12px;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    letter-spacing: 1px;
+}
+
+.cust-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary-glow);
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+}
+
+.customize-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.tab-btn {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-dim);
+.avatar-preview-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.customize-options {
+    width: 300px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 20px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.cust-content {
+    display: none;
+}
+
+.cust-content.active {
+    display: block;
+    animation: slideUpFade 0.3s ease-out;
+}
+
+.cust-group label {
+    display: block;
     font-family: var(--font-display);
-    font-size: 0.65rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 15px;
     letter-spacing: 2px;
-    padding: 12px 6px;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.color-swatch {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+}
+
+.color-swatch.active {
+    border-color: white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.customize-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.prestige-box {
+    display: flex;
+    flex-direction: column;
+}
+
+.prestige-box .label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+}
+
+.prestige-box .value {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #ffd700;
+    font-family: var(--font-display);
+}
+
+.weapon-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.weapon-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    text-align: center;
+    font-size: 0.6rem;
+}
+
+.weapon-card label {
+    margin-bottom: 4px;
+    display: block;
+}
+
+.medals-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.tab-btn {
     border-radius: 8px;
     text-transform: uppercase;
 }
