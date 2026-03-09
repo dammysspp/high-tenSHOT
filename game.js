@@ -216,48 +216,59 @@ class Particle {
 }
 
 class ParticleSystem {
-    constructor() { this.particles = []; }
+    constructor(game) { this.game = game; this.particles = []; }
     add(p) { this.particles.push(p); }
     update() { this.particles.forEach(p => p.update()); this.particles = this.particles.filter(p => !p.dead); }
     draw(ctx, cam) { this.particles.forEach(p => p.draw(ctx, cam)); }
     muzzleFlash(x, y, angle) {
-        for (let i = 0; i < 6; i++) {
+        const count = this.game.settings.graphics === 'Low' ? 2 : 6;
+        for (let i = 0; i < count; i++) {
             const a = angle + (Math.random() - 0.5) * 0.5;
             const sp = 2 + Math.random() * 4;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp, 120 + Math.random() * 80, 2 + Math.random() * 3, ['#fff', '#ffe066', '#ffa726'][i % 3]));
         }
     }
     blood(x, y) {
-        for (let i = 0; i < 8; i++) {
+        const count = this.game.settings.graphics === 'Low' ? 3 : 8;
+        for (let i = 0; i < count; i++) {
             const a = Math.random() * Math.PI * 2; const sp = 1 + Math.random() * 3;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 1, 200 + Math.random() * 200, 2 + Math.random() * 2, ['#ff3333', '#cc0000', '#ff6666'][i % 3]));
         }
     }
     explosion(x, y, radius) {
+        const isLow = this.game.settings.graphics === 'Low';
         // Core fireball
-        for (let i = 0; i < 50; i++) {
+        const coreCount = isLow ? 15 : 50;
+        for (let i = 0; i < coreCount; i++) {
             const a = Math.random() * Math.PI * 2; const sp = 0.5 + Math.random() * 8;
             const c = ['#fff', '#fffde7', '#ffcc00', '#ff9900', '#ff5500', '#ff2200', '#cc0000'][i % 7];
             const sz = 2 + Math.random() * 6;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - Math.random() * 2, 250 + Math.random() * 350, sz, c));
         }
         // Smoke ring
-        for (let i = 0; i < 20; i++) {
+        const smokeCount = isLow ? 0 : 20;
+        for (let i = 0; i < smokeCount; i++) {
             const a = Math.random() * Math.PI * 2; const sp = 0.3 + Math.random() * 2.5;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 0.5, 600 + Math.random() * 400, 6 + Math.random() * 10, 'rgba(80,80,80,0.6)', true, true));
         }
         // Sparks
-        for (let i = 0; i < 25; i++) {
+        const sparkCount = isLow ? 10 : 25;
+        for (let i = 0; i < sparkCount; i++) {
             const a = Math.random() * Math.PI * 2; const sp = 3 + Math.random() * 7;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 2, 400 + Math.random() * 300, 1.5 + Math.random() * 2, ['#fff', '#ffe066', '#ffa726'][i % 3], true, false));
         }
         // Debris
-        for (let i = 0; i < 12; i++) {
+        const debrisCount = isLow ? 0 : 12;
+        for (let i = 0; i < debrisCount; i++) {
             const a = Math.random() * Math.PI * 2; const sp = 2 + Math.random() * 4;
             this.add(new Particle(x, y, Math.cos(a) * sp, Math.sin(a) * sp - 3, 500 + Math.random() * 500, 3 + Math.random() * 4, ['#5d4037', '#795548', '#4e342e'][i % 3], true, false));
         }
     }
     jetpackTrail(x, y) {
+        if (this.game.settings.graphics === 'Low') {
+            this.add(new Particle(x, y, 0, 1 + Math.random(), 80, 2 + Math.random() * 2, '#fff', false, true));
+            return;
+        }
         for (let i = 0; i < 2; i++) {
             const c = ['#00e5ff', '#4dd0e1', '#80deea', '#b2ebf2', '#fff'][Math.random() * 5 | 0];
             this.add(new Particle(x + (Math.random() - 0.5) * 8, y, (Math.random() - 0.5) * 0.8, 1.5 + Math.random() * 2.5, 120 + Math.random() * 80, 2 + Math.random() * 4, c, false, true));
@@ -266,6 +277,7 @@ class ParticleSystem {
         this.add(new Particle(x + (Math.random() - 0.5) * 3, y, 0, 1 + Math.random(), 80, 2 + Math.random() * 2, '#fff', false, true));
     }
     shellEject(x, y, dir) {
+        if (this.game.settings.graphics === 'Low') return;
         this.add(new Particle(x, y, -dir * (1.5 + Math.random() * 2.5), -2.5 - Math.random() * 2, 500, 2, '#ffd700', true, false));
         this.add(new Particle(x, y, -dir * (1 + Math.random() * 1.5), -1.5 - Math.random() * 1.5, 400, 1.5, '#ffab00', true, false));
     }
@@ -1521,7 +1533,7 @@ class Game {
         window.addEventListener('resize', () => this.resizeCanvas());
 
         this.audio = new AudioEngine();
-        this.particles = new ParticleSystem();
+        this.particles = new ParticleSystem(this);
         this.camera = new Camera(this.canvas.width, this.canvas.height);
         this.entities = []; this.bullets = []; this.bots = []; this.grenades = []; this.gibs = [];
         this.damageNumbers = []; this.hitMarkers = []; this.bloodDecals = [];
@@ -1568,10 +1580,12 @@ class Game {
             difficulty: 'Medium',
             killTarget: 20,
             sound: true,
+            graphics: this.isMobile ? 'Low' : (localStorage.getItem('wario_graphics') || 'High'),
             map: 0,
             gameMode: 0,
             sensitivity: parseFloat(localStorage.getItem('wario_sensitivity') || '1.0')
         };
+        this.audio.enabled = this.settings.sound;
 
         // Battle Royale zone
         this.brZone = null;
@@ -1665,6 +1679,10 @@ class Game {
                 if (s === 'difficulty') { let i = DIFF_NAMES.indexOf(this.settings.difficulty) + inc; i = Math.max(0, Math.min(DIFF_NAMES.length - 1, i)); this.settings.difficulty = DIFF_NAMES[i]; }
                 if (s === 'killTarget') { this.settings.killTarget = Math.max(5, Math.min(50, this.settings.killTarget + inc * 5)); }
                 if (s === 'sound') { this.settings.sound = !this.settings.sound; this.audio.enabled = this.settings.sound; }
+                if (s === 'graphics') {
+                    this.settings.graphics = this.settings.graphics === 'High' ? 'Low' : 'High';
+                    localStorage.setItem('wario_graphics', this.settings.graphics);
+                }
                 if (s === 'map') { this.settings.map = (this.settings.map + inc + MAP_NAMES.length) % MAP_NAMES.length; }
                 if (s === 'gameMode') { this.settings.gameMode = (this.settings.gameMode + inc + GAME_MODES.length) % GAME_MODES.length; }
                 if (s === 'armorColor') { this.customization.armorIdx = (this.customization.armorIdx + inc + ARMOR_COLORS.length) % ARMOR_COLORS.length; this.updateCustomizeUI(); }
@@ -1742,6 +1760,7 @@ class Game {
         document.getElementById('setting-difficulty').textContent = this.settings.difficulty;
         document.getElementById('setting-killTarget').textContent = this.settings.killTarget;
         document.getElementById('setting-sound').textContent = this.settings.sound ? 'ON' : 'OFF';
+        if (document.getElementById('setting-graphics')) document.getElementById('setting-graphics').textContent = this.settings.graphics;
         document.getElementById('setting-map').textContent = MAP_NAMES[this.settings.map];
         const gmEl = document.getElementById('setting-gameMode');
         if (gmEl) gmEl.textContent = GAME_MODES[this.settings.gameMode];
