@@ -2984,6 +2984,28 @@ class Game {
                 ctx.fillStyle = '#b388ff'; ctx.fillRect(2, -6, 4, 3);
                 ctx.fillStyle = wc; ctx.beginPath(); ctx.arc(14, 0, 2, 0, Math.PI * 2); ctx.fill();
                 break;
+            case 'assault':
+                ctx.fillStyle = '#444'; ctx.fillRect(-12, -3, 22, 6); // body
+                ctx.fillStyle = '#333'; ctx.fillRect(-6, 2, 5, 8); // magazine (angled)
+                ctx.fillStyle = wc; ctx.fillRect(10, -2, 10, 3); // barrel
+                ctx.fillStyle = '#555'; ctx.fillRect(-16, -2, 4, 6); // stock
+                ctx.fillStyle = '#666'; ctx.fillRect(4, -5, 6, 2); // rail
+                ctx.fillStyle = '#222'; ctx.fillRect(18, -3, 3, 5); // muzzle
+                break;
+            case 'gl':
+                ctx.fillStyle = '#555'; ctx.fillRect(-10, -4, 20, 9); // thick body
+                ctx.fillStyle = wc; ctx.fillRect(10, -3, 8, 6); // wide barrel
+                ctx.fillStyle = '#444'; ctx.fillRect(-4, 4, 8, 4); // drum magazine
+                ctx.fillStyle = '#666'; ctx.fillRect(-14, -2, 4, 6); // short stock
+                ctx.fillStyle = '#333'; ctx.fillRect(2, -7, 4, 3); // leaf sight
+                break;
+            case 'flame':
+                ctx.fillStyle = '#666'; ctx.fillRect(-10, -3, 18, 6); // body
+                ctx.fillStyle = wc; ctx.fillRect(8, -1, 12, 2); // long thin nozzle
+                ctx.fillStyle = '#d32f2f'; ctx.fillRect(-6, 3, 10, 5); // fuel tank
+                ctx.fillStyle = '#444'; ctx.fillRect(-14, -2, 4, 6); // grip
+                ctx.fillStyle = '#ff9800'; ctx.beginPath(); ctx.arc(20, 0, 1.5, 0, Math.PI * 2); ctx.fill(); // pilot light
+                break;
         }
         ctx.restore();
     }
