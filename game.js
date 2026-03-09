@@ -1700,6 +1700,28 @@ class Game {
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('settings-panel').classList.remove('hidden');
         });
+
+        // Settings Tabs Implementation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const handle = (e) => {
+                e.preventDefault();
+                const tabName = btn.dataset.tab;
+
+                // Toggle Buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Toggle Content sections
+                document.querySelectorAll('.settings-tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById('tab-' + tabName).classList.add('active');
+
+                if (this.audio) this.audio.play('pickup'); // Subtle click sound
+            };
+            btn.onclick = handle;
+            btn.ontouchstart = (e) => { e.preventDefault(); handle(e); };
+        });
         bindBtn('btn-back-settings', () => {
             document.getElementById('settings-panel').classList.add('hidden');
             document.getElementById('main-menu').classList.remove('hidden');

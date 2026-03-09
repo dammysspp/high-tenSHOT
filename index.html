@@ -138,86 +138,101 @@
     <div id="settings-panel" class="menu-screen hidden">
         <div class="settings-container">
             <h2 class="settings-title">SETTINGS</h2>
-            <div class="setting-group">
-                <label>Game Mode</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="gameMode">←</button>
-                    <span id="setting-gameMode" class="setting-value">Free For All</span>
-                    <button class="setting-plus" data-setting="gameMode">→</button>
+            <div class="settings-tabs">
+                <button class="tab-btn active" data-tab="gameplay">GAME</button>
+                <button class="tab-btn" data-tab="visuals">VISUALS</button>
+                <button class="tab-btn" data-tab="system">SYSTEM</button>
+            </div>
+
+            <div id="tab-gameplay" class="settings-tab-content active">
+                <div class="setting-group">
+                    <label>Game Mode</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="gameMode">←</button>
+                        <span id="setting-gameMode" class="setting-value">Free For All</span>
+                        <button class="setting-plus" data-setting="gameMode">→</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Kill Target</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="killTarget">−</button>
+                        <span id="setting-killTarget" class="setting-value">20</span>
+                        <button class="setting-plus" data-setting="killTarget">+</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Bot Count</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="botCount">−</button>
+                        <span id="setting-botCount" class="setting-value">7</span>
+                        <button class="setting-plus" data-setting="botCount">+</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Bot Difficulty</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="difficulty">−</button>
+                        <span id="setting-difficulty" class="setting-value">Medium</span>
+                        <button class="setting-plus" data-setting="difficulty">+</button>
+                    </div>
                 </div>
             </div>
-            <div class="setting-group">
-                <label>Bot Count</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="botCount">−</button>
-                    <span id="setting-botCount" class="setting-value">7</span>
-                    <button class="setting-plus" data-setting="botCount">+</button>
+
+            <div id="tab-visuals" class="settings-tab-content">
+                <div class="setting-group">
+                    <label>Graphics</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="graphics">←</button>
+                        <span id="setting-graphics" class="setting-value">High</span>
+                        <button class="setting-plus" data-setting="graphics">→</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Auto Zoom</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="autoZoom">←</button>
+                        <span id="setting-autoZoom" class="setting-value">OFF</span>
+                        <button class="setting-plus" data-setting="autoZoom">→</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Auto Focus</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="autoFocus">←</button>
+                        <span id="setting-autoFocus" class="setting-value">OFF</span>
+                        <button class="setting-plus" data-setting="autoFocus">→</button>
+                    </div>
                 </div>
             </div>
-            <div class="setting-group">
-                <label>Bot Difficulty</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="difficulty">−</button>
-                    <span id="setting-difficulty" class="setting-value">Medium</span>
-                    <button class="setting-plus" data-setting="difficulty">+</button>
+
+            <div id="tab-system" class="settings-tab-content">
+                <div class="setting-group">
+                    <label>Sensitivity</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="sensitivity">−</button>
+                        <span id="setting-sensitivity" class="setting-value">1.0x</span>
+                        <button class="setting-plus" data-setting="sensitivity">+</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Sound</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="sound">−</button>
+                        <span id="setting-sound" class="setting-value">ON</span>
+                        <button class="setting-plus" data-setting="sound">+</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Map</label>
+                    <div class="setting-control">
+                        <button class="setting-minus" data-setting="map">−</button>
+                        <span id="setting-map" class="setting-value">Desert Base</span>
+                        <button class="setting-plus" data-setting="map">+</button>
+                    </div>
                 </div>
             </div>
-            <div class="setting-group">
-                <label>Kill Target</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="killTarget">−</button>
-                    <span id="setting-killTarget" class="setting-value">20</span>
-                    <button class="setting-plus" data-setting="killTarget">+</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Sound</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="sound">−</button>
-                    <span id="setting-sound" class="setting-value">ON</span>
-                    <button class="setting-plus" data-setting="sound">+</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Graphics</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="graphics">←</button>
-                    <span id="setting-graphics" class="setting-value">High</span>
-                    <button class="setting-plus" data-setting="graphics">→</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Sensitivity</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="sensitivity">−</button>
-                    <span id="setting-sensitivity" class="setting-value">1.0x</span>
-                    <button class="setting-plus" data-setting="sensitivity">+</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Auto Zoom</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="autoZoom">←</button>
-                    <span id="setting-autoZoom" class="setting-value">OFF</span>
-                    <button class="setting-plus" data-setting="autoZoom">→</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Auto Focus</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="autoFocus">←</button>
-                    <span id="setting-autoFocus" class="setting-value">OFF</span>
-                    <button class="setting-plus" data-setting="autoFocus">→</button>
-                </div>
-            </div>
-            <div class="setting-group">
-                <label>Map</label>
-                <div class="setting-control">
-                    <button class="setting-minus" data-setting="map">−</button>
-                    <span id="setting-map" class="setting-value">Desert Base</span>
-                    <button class="setting-plus" data-setting="map">+</button>
-                </div>
-            </div>
+
             <button id="btn-back-settings" class="menu-btn">
                 <span class="btn-icon">←</span>
                 <span class="btn-text">BACK</span>

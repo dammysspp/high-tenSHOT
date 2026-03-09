@@ -273,7 +273,64 @@ body {
     color: var(--accent);
     letter-spacing: 5px;
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 25px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 12px 6px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 8px;
+    text-transform: uppercase;
+}
+
+.tab-btn.active {
+    color: #fff;
+    background: var(--bg-glass);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.settings-tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 220px;
+    animation: tabFadeIn 0.4s ease-out forwards;
+}
+
+.settings-tab-content.active {
+    display: flex;
+}
+
+@keyframes tabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .setting-group {
@@ -1204,5 +1261,29 @@ body.is-mobile #btn-fullscreen-toggle {
     .menu-btn {
         padding: 6px 16px;
         font-size: 0.8rem;
+    }
+
+    .settings-container {
+        padding: 20px;
+        gap: 12px;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+
+    .settings-title {
+        font-size: 1.3rem;
+        margin-bottom: 5px;
+    }
+
+    .settings-tabs {
+        margin-bottom: 10px;
+    }
+
+    .tab-btn {
+        padding: 8px 4px;
+    }
+
+    .settings-tab-content {
+        min-height: auto;
     }
 }
