@@ -815,8 +815,35 @@ class MultiplayerClient {
         if (!this.broadcastTimer) {
             this.broadcastTimer = setTimeout(() => {
                 const states = this.lobbyPlayers.map(pl => {
+                    // If it's the host, we MUST inject the host's ACTUAL current state
+                    if (pl.id === this.playerId && this.game.player) {
+                        return {
+                            id: this.playerId,
+                            name: pl.name,
+                            x: this.game.player.x,
+                            y: this.game.player.y,
+                            vx: this.game.player.vx,
+                            vy: this.game.player.vy,
+                            aimAngle: this.game.player.aimAngle,
+                            facingRight: this.game.player.facingRight,
+                            health: this.game.player.health,
+                            fuel: this.game.player.fuel,
+                            weapon: this.game.player.weapon,
+                            ammo: this.game.player.ammo,
+                            isAlive: this.game.player.alive,
+                            kills: this.game.player.kills,
+                            deaths: this.game.player.deaths,
+                            level: this.game.player.level,
+                            xp: this.game.player.xp,
+                            jetpacking: this.game.player.jetpacking,
+                            color: this.game.player.color,
+                            bodyColor: this.game.player.bodyColor,
+                            visorColor: this.game.player.visorColor
+                        };
+                    }
+
                     if (pl.state) return pl.state;
-                    // Fallback for players (like host) who haven't sent an update yet
+                    // Fallback for players who haven't sent an update yet
                     return {
                         id: pl.id,
                         name: pl.name,
@@ -1519,7 +1546,15 @@ class Game {
         };
 
         // Settings
-        this.settings = { botCount: 7, difficulty: 'Medium', killTarget: 20, sound: true, map: 0, gameMode: 0 };
+        this.settings = {
+            botCount: 7,
+            difficulty: 'Medium',
+            killTarget: 20,
+            sound: true,
+            map: 0,
+            gameMode: 0,
+            sensitivity: parseFloat(localStorage.getItem('wario_sensitivity') || '1.0')
+        };
 
         // Battle Royale zone
         this.brZone = null;
@@ -1607,6 +1642,10 @@ class Game {
                 if (s === 'armorColor') { this.customization.armorIdx = (this.customization.armorIdx + inc + ARMOR_COLORS.length) % ARMOR_COLORS.length; this.updateCustomizeUI(); }
                 if (s === 'visorColor') { this.customization.visorIdx = (this.customization.visorIdx + inc + VISOR_COLORS.length) % VISOR_COLORS.length; this.updateCustomizeUI(); }
                 if (s === 'weaponSkin') { this.customization.skinIdx = (this.customization.skinIdx + inc + WEAPON_SKINS.length) % WEAPON_SKINS.length; this.updateCustomizeUI(); }
+                if (s === 'sensitivity') {
+                    this.settings.sensitivity = Math.max(0.1, Math.min(3.0, Math.round((this.settings.sensitivity + inc * 0.1) * 10) / 10));
+                    localStorage.setItem('wario_sensitivity', this.settings.sensitivity);
+                }
                 this.updateSettingsUI();
             };
         });
@@ -1679,6 +1718,8 @@ class Game {
         document.getElementById('setting-map').textContent = MAP_NAMES[this.settings.map];
         const gmEl = document.getElementById('setting-gameMode');
         if (gmEl) gmEl.textContent = GAME_MODES[this.settings.gameMode];
+        const sensEl = document.getElementById('setting-sensitivity');
+        if (sensEl) sensEl.textContent = this.settings.sensitivity.toFixed(1) + 'x';
     }
 
     startGame(isMultiplayer = false) {
@@ -1787,10 +1828,23 @@ class Game {
                 if (Math.random() < 0.15) this.audio.play('jetpack');
             } else { this.player.jetpacking = false; }
             if (this.keys['s']) { this.player.vy += 0.5; }
-            // Aim at mouse
-            const worldMX = this.mouse.x / this.camera.zoom + this.camera.x;
-            const worldMY = this.mouse.y / this.camera.zoom + this.camera.y;
-            this.player.aimAngle = Math.atan2(worldMY - this.player.cy, worldMX - this.player.cx);
+            // Aim at mouse with sensitivity
+            const dx = (this.mouse.x / this.camera.zoom + this.camera.x) - this.player.cx;
+            const dy = (this.mouse.y / this.camera.zoom + this.camera.y) - this.player.cy;
+            let targetAngle = Math.atan2(dy, dx);
+
+            // Adjust sensitivity: it scales the 'delta' from the previous angle
+            if (this.settings.sensitivity !== 1.0) {
+                const currentAngle = this.player.aimAngle;
+                let diff = targetAngle - currentAngle;
+                // Normalize angle wrap
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+
+                targetAngle = currentAngle + diff * this.settings.sensitivity;
+            }
+
+            this.player.aimAngle = targetAngle;
             this.player.facingRight = Math.cos(this.player.aimAngle) > 0;
             // Shoot
             if (this.mouse.down && !this.player.reloading) this.playerShoot();
