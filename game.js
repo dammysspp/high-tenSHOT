@@ -748,6 +748,7 @@ class MultiplayerClient {
                 break;
 
             case 'game_start':
+                if (this.isHost) this.broadcast(msg);
                 this.game.startMultiplayerMatch(msg.settings);
                 break;
 
@@ -1606,7 +1607,7 @@ class Game {
         };
 
         document.getElementById('btn-start-multiplayer').onclick = () => {
-            this.multiplayer.send('start_game', { settings: this.settings });
+            this.multiplayer.send('game_start', { settings: this.settings });
         };
 
         document.getElementById('btn-back-lobby').onclick = () => {
