@@ -130,8 +130,8 @@ const BOT_NAMES = ['Ghost', 'Viper', 'Hawk', 'Storm', 'Blaze', 'Shadow', 'Wolf',
 const DIFFICULTY_PRESETS = {
     Easy: { reactionTime: 800, aimAccuracy: 0.35, aggressiveness: 0.3, movementSkill: 0.3 },
     Medium: { reactionTime: 450, aimAccuracy: 0.6, aggressiveness: 0.55, movementSkill: 0.55 },
-    Hard: { reactionTime: 200, aimAccuracy: 0.82, aggressiveness: 0.75, movementSkill: 0.8 },
-    Insane: { reactionTime: 100, aimAccuracy: 0.95, aggressiveness: 0.9, movementSkill: 0.95 }
+    Hard: { name: 'Hard', reactionTime: 200, aimAccuracy: 0.82, aggressiveness: 0.75, movementSkill: 0.8 },
+    Insane: { name: 'Insane', reactionTime: 0, aimAccuracy: 1.05, aggressiveness: 1.2, movementSkill: 1.2 }
 };
 const DIFF_NAMES = ['Easy', 'Medium', 'Hard', 'Insane'];
 const MAP_NAMES = ['Desert Base', 'Jungle Ruins', 'Bunker'];
@@ -1393,9 +1393,25 @@ class BotAI {
         if (this.targetEnemy && this.targetEnemy.alive) {
             const dx = this.targetEnemy.cx - e.cx, dy = this.targetEnemy.cy - e.cy;
             let targetAngle = Math.atan2(dy, dx);
+
+            // Insane bots have lead-aiming (predictive)
+            if (this.diff.name === 'Insane') {
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const w = e.getWeapon();
+                const timeToHit = dist / w.bulletSpeed;
+                const px = this.targetEnemy.cx + this.targetEnemy.vx * timeToHit;
+                const py = this.targetEnemy.cy + this.targetEnemy.vy * timeToHit;
+                targetAngle = Math.atan2(py - e.cy, px - e.cx);
+            }
+
             // Add inaccuracy
-            targetAngle += (Math.random() - 0.5) * (1 - this.diff.aimAccuracy) * 0.8;
-            e.aimAngle += (targetAngle - e.aimAngle) * 0.1;
+            const acc = Math.min(1.0, this.diff.aimAccuracy);
+            targetAngle += (Math.random() - 0.5) * (1 - acc) * 0.8;
+
+            // Aim speed: Insane bots snap instantly
+            const aimSpeed = this.diff.name === 'Insane' ? 1.0 : 0.1;
+            e.aimAngle += (targetAngle - e.aimAngle) * aimSpeed;
+
             e.facingRight = dx > 0;
             if (this.wantShoot) this.tryShoot(game);
         }
@@ -1418,12 +1434,15 @@ class BotAI {
         // Movement decision
         if (nearest) {
             const dx = nearest.cx - e.cx;
-            const optimalDist = 150 + Math.random() * 150;
+            const isInsane = this.diff.name === 'Insane';
+            const optimalDist = isInsane ? (50 + Math.random() * 100) : (150 + Math.random() * 150);
+
             if (nearDist > optimalDist + 50) this.moveDir = Math.sign(dx);
             else if (nearDist < optimalDist - 50) this.moveDir = -Math.sign(dx);
-            else this.moveDir = Math.random() > 0.5 ? 1 : -1;
+            else this.moveDir = isInsane ? Math.sign(dx) : (Math.random() > 0.5 ? 1 : -1);
+
             // Retreat if low health
-            if (e.health < 30 && this.diff.movementSkill > 0.4) this.moveDir = -Math.sign(dx);
+            if (e.health < 30 && this.diff.movementSkill > 0.4 && !isInsane) this.moveDir = -Math.sign(dx);
         } else {
             this.moveDir = Math.random() > 0.5 ? 1 : -1;
         }
@@ -1433,11 +1452,14 @@ class BotAI {
         if (nearest && nearest.cy < e.cy - 50 && e.fuel > 15) this.wantJet = Math.random() < this.diff.movementSkill;
         if (e.vy > 4 && e.fuel > 5) this.wantJet = true;
         if (Math.random() < 0.15 * this.diff.movementSkill) this.wantJet = true;
+
         // Shoot decision
-        this.wantShoot = nearest && nearDist < 600 && Math.random() < this.diff.aggressiveness;
-        // Grenade decision: throw when enemies are clustered or nearby
+        this.wantShoot = nearest && nearDist < 800 && Math.random() < this.diff.aggressiveness;
+
+        // Grenade decision: Insane bots are more spammy
         this.wantGrenade = false;
-        if (nearest && nearDist < 250 && nearDist > 60 && e.grenades > 0 && Math.random() < 0.03 * this.diff.aggressiveness) this.wantGrenade = true;
+        const nProb = isInsane ? 0.08 : 0.03;
+        if (nearest && nearDist < 400 && nearDist > 60 && e.grenades > 0 && Math.random() < nProb * this.diff.aggressiveness) this.wantGrenade = true;
         // Weapon pickup
         if (e.weapon === 'pistol' || e.ammo <= 0) {
             let nearPickup = null, npd = Infinity;
@@ -1451,14 +1473,19 @@ class BotAI {
                 if (nearPickup.y < e.cy - 30) this.wantJet = true;
             }
         }
-        // Dodge rockets
+        // Dodge bullets (not just rockets)
+        const dodgeRange = this.diff.name === 'Insane' ? 300 : 150;
         for (const b of game.bullets) {
-            if (b.owner === e || !b.explosive) continue;
+            if (b.owner === e || (b.owner.team !== null && b.owner.team === e.team)) continue;
             const dx = b.x - e.cx, dy = b.y - e.cy;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 150 && this.diff.movementSkill > 0.5) {
-                this.moveDir = dx > 0 ? -1 : 1;
-                this.wantJet = true;
+            if (dist < dodgeRange && this.diff.movementSkill > 0.5) {
+                // Determine if bullet is heading towards us
+                const dot = (b.vx * -dx + b.vy * -dy) / (dist * Math.sqrt(b.vx * b.vx + b.vy * b.vy));
+                if (dot > 0.95 || this.diff.name === 'Insane') {
+                    this.moveDir = b.vy > 0 ? -1 : 1; // Try to dodge perpendicularly
+                    if (Math.random() < this.diff.movementSkill) this.wantJet = true;
+                }
             }
         }
     }
@@ -1474,7 +1501,11 @@ class BotAI {
     tryShoot(game) {
         const e = this.entity, w = e.getWeapon(), now = performance.now();
         if (e.reloading) return;
-        if (now - e.lastShot < w.fireRate) return;
+
+        let fireRate = w.fireRate;
+        if (this.diff.name === 'Insane') fireRate *= 0.7; // 30% faster fire rate
+
+        if (now - e.lastShot < fireRate) return;
         if (e.ammo <= 0) { e.startReload(game); return; }
         e.lastShot = now;
         if (e.ammo !== Infinity) e.ammo--;
@@ -1903,13 +1934,28 @@ class Game {
             // Create bots
             const usedNames = [...BOT_NAMES].sort(() => Math.random() - 0.5);
             const diff = DIFFICULTY_PRESETS[this.settings.difficulty];
+            const isInsane = this.settings.difficulty === 'Insane';
+
             for (let i = 0; i < botCount; i++) {
                 const bsp = this.map.spawns[(i + 1) % this.map.spawns.length];
                 const bot = new Entity(bsp.x, bsp.y, usedNames[i % usedNames.length], false);
+
+                if (isInsane) {
+                    bot.maxHealth = 135; // 35% more HP
+                    bot.health = 135;
+                    bot.maxShield = 60; // Better shields
+                    bot.shield = 60;
+                    // Give them a random secondary that isn't just a pistol
+                    const powerWeapons = ['smg', 'shotgun', 'sniper', 'rocket', 'bouncer'];
+                    bot.equipWeapon(powerWeapons[Math.floor(Math.random() * powerWeapons.length)]);
+                }
+
                 this.entities.push(bot);
                 const bd = { ...diff };
-                bd.aimAccuracy = Math.max(0.1, bd.aimAccuracy + (Math.random() - 0.5) * 0.15);
-                bd.reactionTime = Math.max(80, bd.reactionTime + (Math.random() - 0.5) * 200);
+                if (!isInsane) {
+                    bd.aimAccuracy = Math.max(0.1, bd.aimAccuracy + (Math.random() - 0.5) * 0.15);
+                    bd.reactionTime = Math.max(80, bd.reactionTime + (Math.random() - 0.5) * 200);
+                }
                 this.bots.push(new BotAI(bot, bd));
             }
         }
