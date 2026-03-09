@@ -811,7 +811,7 @@ class MultiplayerClient {
             p.state.name = p.name;
 
             // Ensure the remote player is created and updated in the host's game world
-            this.syncPlayers([p.state]);
+            this.syncPlayers([p.state], false);
         }
 
         // At 20Hz, broadcast all states
@@ -868,6 +868,7 @@ class MultiplayerClient {
 
         if (action === 'hit') {
             this.broadcast({ type: 'remote_action', playerId, action: 'hit', data });
+            this.handleRemoteAction(msg); // Apply to self as well
         } else if (action === 'request_respawn') {
             const spawnIdx = Math.floor(Math.random() * 10);
             this.broadcast({ type: 'remote_action', playerId, action: 'respawn', data: { spawnIdx } });
@@ -898,7 +899,7 @@ class MultiplayerClient {
         }
     }
 
-    syncPlayers(playerData) {
+    syncPlayers(playerData, cleanup = true) {
         playerData.forEach(pData => {
             if (pData.id === this.playerId) return;
 
@@ -910,6 +911,8 @@ class MultiplayerClient {
             const rp = this.remotePlayers.get(pData.id);
             rp.updateFromState(pData);
         });
+
+        if (!cleanup) return;
 
         // Cleanup
         const currentIds = playerData.map(p => p.id);
@@ -1310,7 +1313,8 @@ class Grenade {
                 const dmg = GRENADE_DAMAGE * (1 - dist / GRENADE_RADIUS);
 
                 if (game.isMultiplayer) {
-                    if (this.owner.isPlayer) {
+                    // I take damage from any grenade (authoritative for self)
+                    if (e.isPlayer) {
                         e.takeDamage(dmg, this.owner, game);
                         game.multiplayer.send('player_action', {
                             action: 'hit',
