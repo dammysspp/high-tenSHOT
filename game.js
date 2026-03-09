@@ -1548,6 +1548,14 @@ class Game {
         this.prestige = parseInt(localStorage.getItem('wario_prestige') || '0');
         this.allMedals = JSON.parse(localStorage.getItem('wario_medals') || '[]');
 
+        // Mobile
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        this.touch = {
+            left: { active: false, startX: 0, startY: 0, curX: 0, curY: 0, x: 0, y: 0, id: -1 },
+            right: { active: false, startX: 0, startY: 0, curX: 0, curY: 0, x: 0, y: 0, id: -1 }
+        };
+        if (this.isMobile) document.body.classList.add('is-mobile');
+
         // Customization
         this.customization = {
             armorIdx: 0, visorIdx: 0, skinIdx: 0,
@@ -1573,6 +1581,8 @@ class Game {
 
         this.setupInput();
         this.setupMenus();
+        this.setupMobileControls();
+        this.checkOrientation();
     }
 
     resizeCanvas() {
@@ -1830,30 +1840,50 @@ class Game {
                 this.player.vy += JETPACK_THRUST;
                 this.player.fuel -= FUEL_USE;
                 this.player.jetpacking = true;
-                this.particles.jetpackTrail(this.player.cx, this.player.y + this.player.h);
+                this.player.vy -= 1.0;
+                this.player.jetpacking = true;
                 if (Math.random() < 0.15) this.audio.play('jetpack');
+            } else if (this.isMobile && this.touch.left.active && this.touch.left.y < -0.3) {
+                this.player.vy -= 0.8;
+                this.player.jetpacking = true;
+                if (Math.random() < 0.1) this.audio.play('jetpack');
             } else { this.player.jetpacking = false; }
+
             if (this.keys['s']) { this.player.vy += 0.5; }
-            // Aim at mouse with sensitivity
-            const dx = (this.mouse.x / this.camera.zoom + this.camera.x) - this.player.cx;
-            const dy = (this.mouse.y / this.camera.zoom + this.camera.y) - this.player.cy;
-            let targetAngle = Math.atan2(dy, dx);
 
-            // Adjust sensitivity: it scales the 'delta' from the previous angle
-            if (this.settings.sensitivity !== 1.0) {
-                const currentAngle = this.player.aimAngle;
-                let diff = targetAngle - currentAngle;
-                // Normalize angle wrap
-                while (diff > Math.PI) diff -= Math.PI * 2;
-                while (diff < -Math.PI) diff += Math.PI * 2;
-
-                targetAngle = currentAngle + diff * this.settings.sensitivity;
+            // Movement logic for mobile
+            if (this.isMobile && this.touch.left.active) {
+                this.player.vx += this.touch.left.x * 0.45;
             }
 
-            this.player.aimAngle = targetAngle;
-            this.player.facingRight = Math.cos(this.player.aimAngle) > 0;
-            // Shoot
-            if (this.mouse.down && !this.player.reloading) this.playerShoot();
+            // Aim logic with touch
+            if (this.isMobile && this.touch.right.active) {
+                this.player.aimAngle = Math.atan2(this.touch.right.y, this.touch.right.x);
+                this.player.facingRight = Math.cos(this.player.aimAngle) > 0;
+                if (!this.player.reloading) this.playerShoot();
+            } else if (!this.isMobile) {
+                // Aim at mouse with sensitivity
+                const dx = (this.mouse.x / this.camera.zoom + this.camera.x) - this.player.cx;
+                const dy = (this.mouse.y / this.camera.zoom + this.camera.y) - this.player.cy;
+                let targetAngle = Math.atan2(dy, dx);
+
+                // Adjust sensitivity: it scales the 'delta' from the previous angle
+                if (this.settings.sensitivity !== 1.0) {
+                    const currentAngle = this.player.aimAngle;
+                    let diff = targetAngle - currentAngle;
+                    // Normalize angle wrap
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+
+                    targetAngle = currentAngle + diff * this.settings.sensitivity;
+                }
+
+                this.player.aimAngle = targetAngle;
+                this.player.facingRight = Math.cos(this.player.aimAngle) > 0;
+            }
+
+            // Shoot via mouse (Desktop)
+            if (!this.isMobile && this.mouse.down && !this.player.reloading) this.playerShoot();
             // Auto reload when out of ammo
             if (this.player.ammo <= 0 && this.player.weapon !== 'pistol' && !this.player.reloading) this.player.startReload(this);
             // Update reload timer
@@ -2838,6 +2868,98 @@ class Game {
             ctx.strokeRect(cx - bw / 2, sy - 5, bw, bh);
         }
         ctx.globalAlpha = 1;
+    }
+
+    setupMobileControls() {
+        if (!this.isMobile) return;
+        const leftZone = document.getElementById('joystick-left-zone');
+        const rightZone = document.getElementById('joystick-right-zone');
+        const vJoyL = document.getElementById('joystick-left');
+        const vJoyR = document.getElementById('joystick-right');
+        const knobL = vJoyL.querySelector('.v-joystick-knob');
+        const knobR = vJoyR.querySelector('.v-joystick-knob');
+
+        const handleTouch = (e) => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const t = e.changedTouches[i];
+                const x = t.clientX, y = t.clientY;
+
+                if (e.type === 'touchstart') {
+                    if (x < window.innerWidth * 0.4 && !this.touch.left.active) {
+                        this.touch.left.active = true; this.touch.left.id = t.identifier;
+                        this.touch.left.startX = x; this.touch.left.startY = y;
+                        vJoyL.style.display = 'block'; vJoyL.style.left = x + 'px'; vJoyL.style.top = y + 'px';
+                    } else if (x > window.innerWidth * 0.6 && !this.touch.right.active) {
+                        this.touch.right.active = true; this.touch.right.id = t.identifier;
+                        this.touch.right.startX = x; this.touch.right.startY = y;
+                        vJoyR.style.display = 'block'; vJoyR.style.left = x + 'px'; vJoyR.style.top = y + 'px';
+                    }
+                } else if (e.type === 'touchmove') {
+                    if (t.identifier === this.touch.left.id) {
+                        const dx = x - this.touch.left.startX, dy = y - this.touch.left.startY;
+                        const dist = Math.min(50, Math.sqrt(dx * dx + dy * dy));
+                        const angle = Math.atan2(dy, dx);
+                        this.touch.left.x = (Math.cos(angle) * dist) / 50;
+                        this.touch.left.y = (Math.sin(angle) * dist) / 50;
+                        knobL.style.transform = `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist}px))`;
+                    } else if (t.identifier === this.touch.right.id) {
+                        const dx = x - this.touch.right.startX, dy = y - this.touch.right.startY;
+                        const dist = Math.min(50, Math.sqrt(dx * dx + dy * dy));
+                        const angle = Math.atan2(dy, dx);
+                        this.touch.right.x = Math.cos(angle);
+                        this.touch.right.y = Math.sin(angle);
+                        knobR.style.transform = `translate(calc(-50% + ${Math.cos(angle) * dist}px), calc(-50% + ${Math.sin(angle) * dist}px))`;
+                    }
+                } else if (e.type === 'touchend' || e.type === 'touchcancel') {
+                    if (t.identifier === this.touch.left.id) {
+                        this.touch.left.active = false; this.touch.left.id = -1;
+                        this.touch.left.x = 0; this.touch.left.y = 0;
+                        vJoyL.style.display = 'none'; knobL.style.transform = 'translate(-50%, -50%)';
+                    } else if (t.identifier === this.touch.right.id) {
+                        this.touch.right.active = false; this.touch.right.id = -1;
+                        this.touch.right.x = 0; this.touch.right.y = 0;
+                        vJoyR.style.display = 'none'; knobR.style.transform = 'translate(-50%, -50%)';
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouch, { passive: false });
+        window.addEventListener('touchmove', handleTouch, { passive: false });
+        window.addEventListener('touchend', handleTouch, { passive: false });
+        window.addEventListener('touchcancel', handleTouch, { passive: false });
+
+        // Mobile Buttons
+        document.getElementById('v-btn-grenade').ontouchstart = (e) => { e.preventDefault(); if (this.running) this.playerThrowGrenade(); };
+        document.getElementById('v-btn-reload').ontouchstart = (e) => { e.preventDefault(); if (this.running) this.playerManualReload(); };
+        document.getElementById('v-btn-melee').ontouchstart = (e) => { e.preventDefault(); };
+
+        // Fullscreen Toggle
+        const fsBtn = document.getElementById('btn-fullscreen-toggle');
+        fsBtn.onclick = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
+                fsBtn.textContent = 'FULLSCREEN: ON';
+            } else {
+                document.exitFullscreen();
+                fsBtn.textContent = 'FULLSCREEN: OFF';
+            }
+        };
+    }
+
+    checkOrientation() {
+        const blocker = document.getElementById('orientation-blocker');
+        const check = () => {
+            if (this.isMobile && window.innerHeight > window.innerWidth) {
+                blocker.classList.add('active');
+            } else {
+                blocker.classList.remove('active');
+            }
+        };
+        window.addEventListener('resize', check);
+        window.addEventListener('orientationchange', check);
+        check();
     }
 }
 

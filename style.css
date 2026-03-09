@@ -41,11 +41,12 @@ body {
     color: var(--text);
     font-family: var(--font-ui);
     overflow: hidden;
-    cursor: none;
+    cursor: crosshair;
     width: 100vw;
     height: 100vh;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: none;
 }
 
 .hidden {
@@ -973,5 +974,187 @@ body {
     50% {
         transform: scale(1.1);
         opacity: 0.7;
+    }
+}
+
+/* ============================================
+   MOBILE COMPATIBILITY
+   ============================================ */
+
+/* --- Orientation Blocker --- */
+#orientation-blocker {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-dark);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    text-align: center;
+}
+
+#orientation-blocker.active {
+    display: flex;
+}
+
+.rotate-icon {
+    font-size: 4rem;
+    animation: rotateDevice 2s ease-in-out infinite;
+    color: var(--accent);
+}
+
+@keyframes rotateDevice {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(90deg);
+    }
+}
+
+/* --- Mobile Controls --- */
+#mobile-controls {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    display: none;
+}
+
+body.is-mobile #mobile-controls {
+    display: block;
+}
+
+.joystick-zone {
+    position: absolute;
+    bottom: 20px;
+    width: 50%;
+    height: 180px;
+    pointer-events: auto;
+}
+
+#joystick-left-zone {
+    left: 0;
+}
+
+#joystick-right-zone {
+    right: 0;
+}
+
+.v-joystick {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    display: none;
+    backdrop-filter: blur(4px);
+}
+
+.v-joystick-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 15px var(--accent-glow);
+}
+
+/* --- Mobile Action Buttons --- */
+.mobile-action-buttons {
+    position: absolute;
+    bottom: 80px;
+    right: 25%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    pointer-events: auto;
+}
+
+.v-btn {
+    width: 60px;
+    height: 60px;
+    background: rgba(20, 30, 50, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+.v-btn:active {
+    background: var(--accent);
+    border-color: #fff;
+    transform: scale(0.9);
+}
+
+#btn-fullscreen-toggle {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    display: none;
+    cursor: pointer;
+}
+
+body.is-mobile #btn-fullscreen-toggle {
+    display: block;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 900px) {
+    .logo-title {
+        font-size: 3.5rem;
+        letter-spacing: 4px;
+    }
+
+    #hud-player-stats {
+        min-width: 180px;
+        scale: 0.8;
+        transform-origin: top left;
+    }
+
+    #hud-match-stats {
+        scale: 0.8;
+        transform-origin: top right;
+    }
+
+    #hud-leaderboard {
+        scale: 0.8;
+        transform-origin: top right;
+        top: 120px;
+    }
+
+    .leaderboard-header {
+        font-size: 0.8rem;
+    }
+
+    .settings-container {
+        width: 90vw;
+        max-width: 400px;
+        padding: 20px;
     }
 }

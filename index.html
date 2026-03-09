@@ -220,6 +220,16 @@
         </div>
     </div>
 
+    <!-- Mobile Orientation Reminder -->
+    <div id="orientation-blocker">
+        <div class="rotate-icon">📱</div>
+        <h2 style="font-family:'Orbitron';letter-spacing:4px">PLEASE ROTATE TO LANDSCAPE</h2>
+        <p style="color:#7986a0">This game requires landscape mode for the best experience.</p>
+    </div>
+
+    <!-- Mobile Controls Fullscreen Toggle -->
+    <button id="btn-fullscreen-toggle">FULLSCREEN: OFF</button>
+
     <!-- Game Canvas -->
     <canvas id="gameCanvas"></canvas>
 
@@ -335,6 +345,25 @@
         <div id="br-zone-warning" class="hidden"
             style="position:absolute;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(255,0,0,0.2);border:1px solid rgba(255,0,0,0.6);border-radius:8px;padding:6px 20px;font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:#ff4444;letter-spacing:2px;animation:healthPulse 0.5s ease-in-out infinite">
             ⚠ OUTSIDE SAFE ZONE ⚠</div>
+    </div>
+
+    <!-- Mobile Controls Overlay -->
+    <div id="mobile-controls">
+        <div id="joystick-left-zone" class="joystick-zone">
+            <div id="joystick-left" class="v-joystick">
+                <div class="v-joystick-knob"></div>
+            </div>
+        </div>
+        <div id="joystick-right-zone" class="joystick-zone">
+            <div id="joystick-right" class="v-joystick">
+                <div class="v-joystick-knob"></div>
+            </div>
+        </div>
+        <div class="mobile-action-buttons">
+            <button class="v-btn" id="v-btn-grenade">💣</button>
+            <button class="v-btn" id="v-btn-reload">↻</button>
+            <button class="v-btn" id="v-btn-melee">👊</button>
+        </div>
     </div>
 
     <script src="game.js"></script>
